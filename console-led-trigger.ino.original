@@ -1,0 +1,303 @@
+// Existing includes
+#include <math.h>
+#include <EEPROM.h>
+#include <Adafruit_NeoPixel.h>
+
+// EEPROM settings
+constexpr int EEPROM_SIZE = 64;
+constexpr int ADDR_THRESHOLD_ON = 0;
+constexpr int ADDR_THRESHOLD_OFF = ADDR_THRESHOLD_ON + sizeof(float);
+constexpr int ADDR_COLOR_R = ADDR_THRESHOLD_OFF + sizeof(float);
+constexpr int ADDR_COLOR_G = ADDR_COLOR_R + 1;
+constexpr int ADDR_COLOR_B = ADDR_COLOR_G + 1;
+
+// Hardware pin definitions
+constexpr uint8_t LED_PIN = 29;
+constexpr uint8_t SENSOR_PIN = 27;
+constexpr uint8_t CALC_BUTTON_PIN = 14;
+constexpr uint8_t NUM_PIXELS = 15;
+
+Adafruit_NeoPixel strip(NUM_PIXELS, LED_PIN, NEO_GRB + NEO_KHZ800);
+
+// ADC and sensor calibration constants
+constexpr float ADC_REF_VOLTAGE = 3.3f;
+constexpr float ADC_MAX_VALUE = 4095.0f;
+constexpr float R_TOP = 10.0f;
+constexpr float R_BOTTOM = 4.7f;
+constexpr float VOLTAGE_DIVIDER_RATIO = R_TOP / (R_BOTTOM + R_TOP);
+constexpr float ACS712_ZERO_CURRENT_VOLTAGE = 2.5f;
+constexpr float ACS712_SENSITIVITY = 0.185f;
+
+// Current thresholds
+float currentThresholdOn = 0.045;
+float currentThresholdOff = 0.035;
+
+// Current calibration values
+float baselineCurrentOff = 0.0;
+float baselineCurrentOn = 0.0;
+
+// LED state and smoothing
+constexpr float SMOOTHING_ALPHA = 0.1;
+constexpr unsigned long TIMEOUT_DELAY = 2500;
+float smoothedCurrent = 0.0;
+bool ledsOn = false;
+unsigned long ledOnTimestamp = 0;
+bool firstCurrentRead = true;
+
+// Button handling
+unsigned long lastButtonChangeTime = 0;
+unsigned long buttonPressStartTime = 0;
+constexpr unsigned long debounceDelay = 50;
+constexpr unsigned long longPressDuration = 3000;
+constexpr unsigned long doubleClickThreshold = 400;
+
+// Color selection mode
+bool inColorSelectMode = false;
+unsigned long lastClickTime = 0;
+uint8_t selectedColorIndex = 0;
+uint8_t savedR = 255, savedG = 0, savedB = 0;
+
+const uint8_t COLOR_OPTIONS[][3] = {
+    {255, 0, 0},     // Red
+    {0, 255, 0},     // Green
+    {0, 0, 255},     // Blue
+    {255, 255, 0},   // Yellow
+    {0, 255, 255},   // Cyan
+    {255, 0, 255},   // Magenta
+    {255, 128, 0},   // Orange
+    {128, 0, 255},   // Purple
+    {255, 255, 255}, // White
+};
+
+constexpr uint8_t NUM_COLORS = sizeof(COLOR_OPTIONS) / sizeof(COLOR_OPTIONS[0]);
+
+// State machine for calibration
+enum State
+{
+  RUNNING,
+  WAITING_FOR_OFF_PRESS,
+  WAITING_FOR_ON_PRESS
+};
+State state = RUNNING;
+
+void EEPROMWriteFloat(int address, float value)
+{
+  byte *p = (byte *)(void *)&value;
+  for (unsigned int i = 0; i < sizeof(float); i++)
+    EEPROM.write(address + i, *p++);
+}
+
+float EEPROMReadFloat(int address)
+{
+  float value = 0.0;
+  byte *p = (byte *)(void *)&value;
+  for (unsigned int i = 0; i < sizeof(float); i++)
+    *p++ = EEPROM.read(address + i);
+  return value;
+}
+
+void loadSavedColor()
+{
+  savedR = EEPROM.read(ADDR_COLOR_R);
+  savedG = EEPROM.read(ADDR_COLOR_G);
+  savedB = EEPROM.read(ADDR_COLOR_B);
+}
+
+void saveCurrentColor(uint8_t r, uint8_t g, uint8_t b)
+{
+  EEPROM.write(ADDR_COLOR_R, r);
+  EEPROM.write(ADDR_COLOR_G, g);
+  EEPROM.write(ADDR_COLOR_B, b);
+  EEPROM.commit();
+}
+
+bool isEEPROMValid(float onVal, float offVal)
+{
+  return (onVal > 0.0f && offVal > 0.0f && offVal < onVal);
+}
+
+void setAllPixels(uint8_t r, uint8_t g, uint8_t b)
+{
+  uint32_t color = strip.Color(r, g, b);
+  for (int i = 0; i < NUM_PIXELS; i++)
+    strip.setPixelColor(i, color);
+  strip.show();
+}
+
+void blinkColor(uint8_t r, uint8_t g, uint8_t b, int times, int delayMs)
+{
+  for (int i = 0; i < times; i++)
+  {
+    setAllPixels(r, g, b);
+    delay(delayMs);
+    strip.clear();
+    strip.show();
+    delay(delayMs);
+  }
+}
+
+void clearStrip()
+{
+  strip.clear();
+  strip.show();
+}
+
+float readCurrent()
+{
+  int sensorValue = analogRead(SENSOR_PIN);
+  float voltageAtPin = (sensorValue / ADC_MAX_VALUE) * ADC_REF_VOLTAGE;
+  float sensorVoltage = voltageAtPin / VOLTAGE_DIVIDER_RATIO;
+  return (sensorVoltage - ACS712_ZERO_CURRENT_VOLTAGE) / ACS712_SENSITIVITY;
+}
+
+float readAverageCurrent(int samples = 50, int delayMs = 100)
+{
+  float sum = 0;
+  for (int i = 0; i < samples; i++)
+  {
+    sum += readCurrent();
+    float progress = (float)i / (samples - 1);
+    float brightness = 10 + 118 * sin(progress * PI);
+    strip.setBrightness((uint8_t)brightness);
+    setAllPixels(0, 0, 255);
+    delay(delayMs);
+  }
+  strip.setBrightness(128);
+  clearStrip();
+  return sum / samples;
+}
+
+void setup()
+{
+  Serial.begin(115200);
+  EEPROM.begin(EEPROM_SIZE);
+  strip.begin();
+  strip.setBrightness(128);
+  pinMode(CALC_BUTTON_PIN, INPUT_PULLUP);
+  pinMode(SENSOR_PIN, INPUT);
+  clearStrip();
+
+  float savedOn = EEPROMReadFloat(ADDR_THRESHOLD_ON);
+  float savedOff = EEPROMReadFloat(ADDR_THRESHOLD_OFF);
+  if (isEEPROMValid(savedOn, savedOff))
+  {
+    currentThresholdOn = savedOn;
+    currentThresholdOff = savedOff;
+  }
+  loadSavedColor();
+  Serial.println("Normal mode. Hold button 3 sec to enter calibration, double-click to select color.");
+}
+
+void loop()
+{
+  unsigned long now = millis();
+  float currentRaw = readCurrent();
+  if (firstCurrentRead)
+  {
+    smoothedCurrent = currentRaw;
+    firstCurrentRead = false;
+  }
+  else
+  {
+    smoothedCurrent = (SMOOTHING_ALPHA * currentRaw) + ((1 - SMOOTHING_ALPHA) * smoothedCurrent);
+  }
+
+  static bool buttonPrev = false;
+  bool buttonCurr = digitalRead(CALC_BUTTON_PIN) == LOW;
+
+  if (buttonCurr != buttonPrev)
+  {
+    lastButtonChangeTime = now;
+    if (buttonCurr)
+    {
+      if ((now - lastClickTime) < doubleClickThreshold)
+      {
+        if (inColorSelectMode)
+        {
+          uint8_t r = COLOR_OPTIONS[selectedColorIndex][0];
+          uint8_t g = COLOR_OPTIONS[selectedColorIndex][1];
+          uint8_t b = COLOR_OPTIONS[selectedColorIndex][2];
+
+          saveCurrentColor(r, g, b);
+          blinkColor(r, g, b, 2, 150);
+          inColorSelectMode = false;
+          Serial.println("Color saved.");
+        }
+        else
+        {
+          inColorSelectMode = true;
+          selectedColorIndex = 0;
+        }
+      }
+      buttonPressStartTime = now;
+    }
+    buttonPrev = buttonCurr;
+    lastClickTime = now;
+  }
+
+  if (state == RUNNING && buttonCurr && buttonPressStartTime != 0 && (now - buttonPressStartTime >= longPressDuration))
+  {
+    clearStrip();
+    blinkColor(255, 255, 255, 3, 150);
+    state = WAITING_FOR_OFF_PRESS;
+    delay(300);
+
+    buttonPressStartTime = 0;
+  }
+
+  if (!buttonCurr && buttonPrev && (now - lastButtonChangeTime > debounceDelay))
+  {
+    if (inColorSelectMode)
+    {
+      selectedColorIndex = (selectedColorIndex + 1) % NUM_COLORS;
+      setAllPixels(
+          COLOR_OPTIONS[selectedColorIndex][0],
+          COLOR_OPTIONS[selectedColorIndex][1],
+          COLOR_OPTIONS[selectedColorIndex][2]);
+    }
+    else if (state == WAITING_FOR_OFF_PRESS)
+    {
+      baselineCurrentOff = readAverageCurrent();
+      blinkColor(0, 255, 0, 3, 300);
+      state = WAITING_FOR_ON_PRESS;
+    }
+    else if (state == WAITING_FOR_ON_PRESS)
+    {
+      baselineCurrentOn = readAverageCurrent();
+      currentThresholdOff = max(0.0f, baselineCurrentOff + 0.01);
+      currentThresholdOn = max(currentThresholdOff + 0.005, baselineCurrentOn - 0.01);
+      EEPROMWriteFloat(ADDR_THRESHOLD_ON, currentThresholdOn);
+      EEPROMWriteFloat(ADDR_THRESHOLD_OFF, currentThresholdOff);
+      EEPROM.commit();
+      blinkColor(0, 255, 0, 3, 200);
+      state = RUNNING;
+    }
+  }
+
+  if (state == RUNNING && !inColorSelectMode)
+  {
+    if (!ledsOn)
+    {
+      if (abs(smoothedCurrent) > currentThresholdOn)
+      {
+        setAllPixels(savedR, savedG, savedB);
+        ledsOn = true;
+        ledOnTimestamp = now;
+      }
+    }
+    else
+    {
+      if ((now - ledOnTimestamp) < TIMEOUT_DELAY || abs(smoothedCurrent) > currentThresholdOff)
+      {
+        // Do nothing
+      }
+      else
+      {
+        clearStrip();
+        ledsOn = false;
+      }
+    }
+  }
+
+  delay(50);
+}
