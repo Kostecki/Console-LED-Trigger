@@ -69,7 +69,7 @@ void loop()
   {
     if (powerOffTime == 0)
       powerOffTime = millis();
-    if (millis() - powerOffTime >= powerOffDelay)
+    if (millis() - powerOffTime >= POWER_OFF_DELAY)
       ledEnabled = false;
   }
   else if (adc > CURRENT_THRESHOLD_OFF)
@@ -131,7 +131,7 @@ void loop()
   {
     unsigned long pressDuration = millis() - pressStartTime;
 
-    if (pressDuration >= longPressThreshold)
+    if (pressDuration >= LONG_PRESS_THRESHOLD)
     {
       inBrightnessMode = !inBrightnessMode;
       Serial1.println(inBrightnessMode ? "Entered brightness mode" : "Exited brightness mode");
