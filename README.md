@@ -13,11 +13,11 @@ This project controls RGB LED strips for retro gaming consoles using current sen
 
 ## Hardware
 
-- RP2040-Zero (or other Arduino-compatible microcontroller)
-- WS2812B (NeoPixel) LED strip
-- ACS712 or similar current sensor
-- Rotary encoder with push button (e.g., EC11)
-- 5V power supply (e.g., Mean Well IRM-10-5)
+- RP2040-Zero
+- WS2812B LED strip
+- ZMCT103C current transformer
+- EC11 Rotary encoder with push button
+- Mean Well IRM-10-5 5V power supply
 
 ## Controls
 
