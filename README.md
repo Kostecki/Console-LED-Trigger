@@ -33,9 +33,29 @@ This project controls RGB LED strips for retro gaming consoles using current sen
 Adjust thresholds and pin assignments in `config.h` and `pins.h`.  
 Predefined colors are listed in `colors.h`.
 
-## EEPROM Layout
+| Constant                  | Description                                               |
+| ------------------------- | --------------------------------------------------------- |
+| `EEPROM_ADDR_COLOR`       | EEPROM address to store selected color index.             |
+| `EEPROM_ADDR_BRIGHTNESS`  | EEPROM address to store brightness level (0-255).         |
+| `NUM_PIXELS`              | Number of WS2812 LEDs connected.                          |
+| `CURRENT_THRESHOLD`       | Baseline ADC threshold to detect console power.           |
+| `CURRENT_SENSE_OFFSET`    | Hysteresis value to prevent flickering near threshold.    |
+| `CURRENT_THRESHOLD_ON`    | Calculated threshold to detect "power on".                |
+| `CURRENT_THRESHOLD_OFF`   | Calculated threshold to detect "power off".               |
+| `ENCODER_STEPS_PER_CLICK` | Encoder resolution adjustment.                            |
+| `LONG_PRESS_THRESHOLD`    | Time required to trigger brightness mode with long press. |
+| `POWER_OFF_DELAY`         | Time to wait before fading LEDs off after current drops.  |
 
-| Address         | Purpose           |
-|----------------|-------------------|
-| `EEPROM_ADDR_COLOR`      | Saved color index    |
-| `EEPROM_ADDR_BRIGHTNESS` | Saved brightness (0–255) |
+
+## Colors
+| Index | Color   | Default |
+|:-----:| ------- |:-------:|
+| 0     | Red     |    ✓    |
+| 1     | Green   |         |
+| 2     | Blue    |         |
+| 3     | Yellow  |         |
+| 4     | Magenta |         |
+| 5     | Orange  |         |
+| 6     | Purple  |         |
+| 7     | Cyan    |         |
+| 8     | White   |         |
