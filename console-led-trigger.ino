@@ -9,15 +9,17 @@
 // LED Setup
 Adafruit_NeoPixel strip(NUM_PIXELS, LED_PIN, NEO_GRB + NEO_KHZ800);
 bool ledEnabled = false;
+bool inBrightnessMode = false;
 
 // Encoder Setup
 Encoder encoder(ENCODER_A, ENCODER_B);
 uint8_t currentColorIndex = 0;
+uint8_t currentBrightness = 128;
 
 void setup()
 {
   Serial1.begin(115200);
-  delay(1000); // Allow time for Serial Monitor to open
+  delay(1000);
   Serial1.println("Console LED Trigger starting...");
 
   EEPROM.begin(64);
@@ -25,16 +27,25 @@ void setup()
   pinMode(CURRENT_SENSE_PIN, INPUT);
 
   // Read saved color index from EEPROM
-  currentColorIndex = EEPROM.read(EEPROM_ADDR);
+  currentColorIndex = EEPROM.read(EEPROM_ADDR_COLOR);
   if (currentColorIndex >= NUM_COLORS)
   {
     currentColorIndex = 0;
-    EEPROM.write(EEPROM_ADDR, currentColorIndex); // Save default red
+    EEPROM.write(EEPROM_ADDR_COLOR, currentColorIndex);
+    EEPROM.commit();
+  }
+
+  // Read saved brightness from EEPROM
+  currentBrightness = EEPROM.read(EEPROM_ADDR_BRIGHTNESS);
+  if (currentBrightness == 0xFF || currentBrightness == 0)
+  {
+    currentBrightness = 128;
+    EEPROM.write(EEPROM_ADDR_BRIGHTNESS, currentBrightness);
     EEPROM.commit();
   }
 
   strip.begin();
-  strip.setBrightness(128);
+  strip.setBrightness(currentBrightness);
   strip.clear();
   strip.show();
 
@@ -45,12 +56,11 @@ void loop()
 {
   int adc = analogRead(CURRENT_SENSE_PIN);
   Serial1.println("ADC Value: " + String(adc));
-  delay(1000); // Slow down ADC reads for stability
+  delay(1000);
 
   static bool lastLedEnabled = false;
   static unsigned long powerOffTime = 0;
 
-  // Check current draw and determine LED state
   if (!ledEnabled && adc > CURRENT_THRESHOLD_ON)
   {
     ledEnabled = true;
@@ -59,18 +69,14 @@ void loop()
   {
     if (powerOffTime == 0)
       powerOffTime = millis();
-
-    // Wait 5 seconds before turning off
-    if (millis() - powerOffTime >= 5000)
+    if (millis() - powerOffTime >= powerOffDelay)
       ledEnabled = false;
   }
   else if (adc > CURRENT_THRESHOLD_OFF)
   {
-    // Reset timer if current rises again during countdown
     powerOffTime = 0;
   }
 
-  // Handle LED transition
   if (ledEnabled != lastLedEnabled)
   {
     if (ledEnabled)
@@ -84,29 +90,74 @@ void loop()
     lastLedEnabled = ledEnabled;
   }
 
-  // Handle encoder rotation
+  // Handle encoder input
   static int lastEncoderPosition = 0;
   int encoderPosition = encoder.read() / ENCODER_STEPS_PER_CLICK;
-
   int delta = encoderPosition - lastEncoderPosition;
+
   if (delta != 0)
   {
     lastEncoderPosition = encoderPosition;
-    currentColorIndex = (currentColorIndex + delta + NUM_COLORS) % NUM_COLORS;
-    updateLED(false);
-  }
 
-  // Handle encoder click
-  if (digitalRead(ENCODER_SW) == LOW)
-  {
-    if (EEPROM.read(EEPROM_ADDR) != currentColorIndex)
+    if (inBrightnessMode)
     {
-      EEPROM.write(EEPROM_ADDR, currentColorIndex);
-      EEPROM.commit();
+      int newBrightness = constrain(currentBrightness + delta * 5, 0, 255);
+      if (newBrightness != currentBrightness)
+      {
+        currentBrightness = newBrightness;
+        strip.setBrightness(currentBrightness);
+        updateLED(false);
+      }
     }
-    delay(300);
+    else
+    {
+      currentColorIndex = (currentColorIndex + delta + NUM_COLORS) % NUM_COLORS;
+      updateLED(false);
+    }
   }
 
+  // Handle button presses
+  static bool wasButtonPressed = false;
+  static unsigned long pressStartTime = 0;
+
+  bool buttonPressed = digitalRead(ENCODER_SW) == LOW;
+
+  if (buttonPressed && !wasButtonPressed)
+  {
+    pressStartTime = millis();
+  }
+
+  if (!buttonPressed && wasButtonPressed)
+  {
+    unsigned long pressDuration = millis() - pressStartTime;
+
+    if (pressDuration >= longPressThreshold)
+    {
+      inBrightnessMode = !inBrightnessMode;
+      Serial1.println(inBrightnessMode ? "Entered brightness mode" : "Exited brightness mode");
+    }
+    else
+    {
+      if (inBrightnessMode)
+      {
+        Serial1.println("Saved brightness & exiting brightness mode");
+        EEPROM.write(EEPROM_ADDR_BRIGHTNESS, currentBrightness);
+        EEPROM.commit();
+        inBrightnessMode = false;
+      }
+      else
+      {
+        if (EEPROM.read(EEPROM_ADDR_COLOR) != currentColorIndex)
+        {
+          EEPROM.write(EEPROM_ADDR_COLOR, currentColorIndex);
+          EEPROM.commit();
+          Serial1.println("Saved color to EEPROM");
+        }
+      }
+    }
+  }
+
+  wasButtonPressed = buttonPressed;
   delay(10);
 }
 

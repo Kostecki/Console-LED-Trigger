@@ -1,7 +1,8 @@
 #pragma once
 
 // EEPROM Config
-#define EEPROM_ADDR 0
+#define EEPROM_ADDR_COLOR 0
+#define EEPROM_ADDR_BRIGHTNESS 1
 
 // Current Sense Config
 const int CURRENT_THRESHOLD = 100;
@@ -14,3 +15,7 @@ constexpr int ENCODER_STEPS_PER_CLICK = 4;
 
 // LED Config
 constexpr uint8_t NUM_PIXELS = 15;
+
+// Timing Config
+constexpr uint8_t longPressThreshold = 2000; // 2 seconds
+constexpr uint8_t powerOffDelay = 5000;      // 5 seconds
