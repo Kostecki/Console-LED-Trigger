@@ -1,5 +1,5 @@
-# Created by https://www.toptal.com/developers/gitignore/api/macos,visualstudiocode,c++
-# Edit at https://www.toptal.com/developers/gitignore?templates=macos,visualstudiocode,c++
+# Created by https://www.toptal.com/developers/gitignore/api/c++,macos,visualstudiocode,platformio
+# Edit at https://www.toptal.com/developers/gitignore?templates=c++,macos,visualstudiocode,platformio
 
 ### C++ ###
 # Prerequisites
@@ -68,6 +68,13 @@ Temporary Items
 # iCloud generated files
 *.icloud
 
+### PlatformIO ###
+.pioenvs
+.piolibdeps
+.clang_complete
+.gcc-flags.json
+.pio
+
 ### VisualStudioCode ###
 .vscode/*
 !.vscode/settings.json
@@ -87,7 +94,7 @@ Temporary Items
 .history
 .ionide
 
-# End of https://www.toptal.com/developers/gitignore/api/macos,visualstudiocode,c++
+# End of https://www.toptal.com/developers/gitignore/api/c++,macos,visualstudiocode,platformio
 
 # Arduino build artifacts
 *.elf
