@@ -1,10 +1,13 @@
-#include <EEPROM.h>
+#include <Preferences.h>
 #include <RotaryEncoder.h>
 #include <Adafruit_NeoPixel.h>
 
 #include "pins.h"
 #include "colors.h"
 #include "config.h"
+
+// Preferences setup
+Preferences prefs;
 
 // LED Setup
 Adafruit_NeoPixel strip(NUM_PIXELS, LED_PIN, NEO_GRB + NEO_KHZ800);
@@ -58,7 +61,9 @@ void setup()
   delay(1000);
   Serial1.println("Console LED Trigger starting...");
 
-  EEPROM.begin(64);
+  // Initialize Preferences
+  prefs.begin("led-config", false);
+
   pinMode(ENCODER_SW, INPUT_PULLUP);
   pinMode(CURRENT_SENSE_PIN, INPUT);
 
@@ -67,27 +72,13 @@ void setup()
   attachInterrupt(digitalPinToInterrupt(ENCODER_B), []
                   { encoder.tick(); }, CHANGE);
 
-  // Read saved color index from EEPROM
-  currentColorIndex = EEPROM.read(EEPROM_ADDR_COLOR);
-  Serial1.print("Saved color index: ");
+  // Read saved color index from Preferences
+  currentColorIndex = prefs.getUChar("color", 0);
   Serial1.println(currentColorIndex);
-  if (currentColorIndex >= NUM_COLORS)
-  {
-    currentColorIndex = 0;
-    EEPROM.write(EEPROM_ADDR_COLOR, currentColorIndex);
-    EEPROM.commit();
-  }
 
-  // Read saved brightness from EEPROM
-  currentBrightness = EEPROM.read(EEPROM_ADDR_BRIGHTNESS);
-  Serial1.print("Saved brightness: ");
+  // Read saved brightness from Preferences
+  currentBrightness = prefs.getUChar("brightness", 128);
   Serial1.println(currentBrightness);
-  if (currentBrightness == 0xFF || currentBrightness == 0)
-  {
-    currentBrightness = 128;
-    EEPROM.write(EEPROM_ADDR_BRIGHTNESS, currentBrightness);
-    EEPROM.commit();
-  }
 
   strip.begin();
   strip.setBrightness(currentBrightness);
@@ -202,8 +193,7 @@ void loop()
     {
       if (inBrightnessMode)
       {
-        EEPROM.write(EEPROM_ADDR_BRIGHTNESS, currentBrightness);
-        EEPROM.commit();
+        prefs.putUChar("brightness", currentBrightness);
         Serial1.print("Saved brightness: ");
         Serial1.println(currentBrightness);
         Serial1.println("Exiting brightness mode");
@@ -211,13 +201,9 @@ void loop()
       }
       else
       {
-        if (EEPROM.read(EEPROM_ADDR_COLOR) != currentColorIndex)
-        {
-          EEPROM.write(EEPROM_ADDR_COLOR, currentColorIndex);
-          EEPROM.commit();
-          Serial1.print("Saved color to EEPROM: ");
-          Serial1.println(currentColorIndex);
-        }
+        prefs.putUChar("color", currentColorIndex);
+        Serial1.print("Saved color to Preferences: ");
+        Serial1.println(currentColorIndex);
       }
     }
   }
