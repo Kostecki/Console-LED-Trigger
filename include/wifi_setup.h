@@ -17,7 +17,7 @@ void setupWiFiAndOTA(Preferences &prefs)
   wm.addParameter(&p_mqtt_user);
   wm.addParameter(&p_mqtt_pass);
 
-  if (!wm.autoConnect("Console-LED-AP"))
+  if (!wm.autoConnect("Console-LEDs-AP"))
   {
     Serial1.println("⚠️ WiFi failed. Rebooting...");
     delay(3000);

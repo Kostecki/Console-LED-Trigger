@@ -1,7 +1,7 @@
 #pragma once
 #include <Adafruit_NeoPixel.h>
 
-inline const uint32_t colors[] = {
+const uint32_t colors[] = {
     Adafruit_NeoPixel::Color(255, 0, 0),    // Red
     Adafruit_NeoPixel::Color(0, 255, 0),    // Green
     Adafruit_NeoPixel::Color(0, 0, 255),    // Blue
