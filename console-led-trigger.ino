@@ -1,4 +1,7 @@
+#include <WiFi.h>
+#include <WiFiManager.h>
 #include <Preferences.h>
+#include <ArduinoOTA.h>
 #include <RotaryEncoder.h>
 #include <Adafruit_NeoPixel.h>
 
@@ -57,9 +60,42 @@ uint8_t lerpColorComponent(uint8_t from, uint8_t to, uint8_t step, uint8_t maxSt
 
 void setup()
 {
+  // Initialize Serial for debugging
   Serial1.begin(115200);
   delay(1000);
   Serial1.println("Console LED Trigger starting...");
+
+  // Initialize WiFi
+  WiFiManager wm;
+  if (!wm.autoConnect("Console-LED-AP"))
+  {
+    Serial1.println("⚠️ Failed to connect to WiFi. Rebooting...");
+    delay(3000);
+    ESP.restart();
+  }
+
+  Serial1.print("✅ Connected to WiFi! IP: ");
+  Serial1.println(WiFi.localIP());
+
+  // Initialize OTA
+  ArduinoOTA
+      .onStart([]()
+               { Serial1.println("🔄 OTA update starting..."); })
+      .onEnd([]()
+             { Serial1.println("\n✅ OTA update complete"); })
+      .onProgress([](unsigned int progress, unsigned int total)
+                  { Serial1.printf("📶 OTA Progress: %u%%\r", (progress * 100) / total); })
+      .onError([](ota_error_t error)
+               {
+    Serial1.printf("❌ OTA Error [%u]: ", error);
+    if (error == OTA_AUTH_ERROR) Serial1.println("Auth Failed");
+    else if (error == OTA_BEGIN_ERROR) Serial1.println("Begin Failed");
+    else if (error == OTA_CONNECT_ERROR) Serial1.println("Connect Failed");
+    else if (error == OTA_RECEIVE_ERROR) Serial1.println("Receive Failed");
+    else if (error == OTA_END_ERROR) Serial1.println("End Failed"); });
+
+  ArduinoOTA.begin();
+  Serial1.println("📡 OTA ready");
 
   // Initialize Preferences
   prefs.begin("led-config", false);
@@ -94,6 +130,8 @@ void setup()
 
 void loop()
 {
+  ArduinoOTA.handle();
+
   int adc = analogRead(CURRENT_SENSE_PIN);
 
   static bool lastLedEnabled = false;
