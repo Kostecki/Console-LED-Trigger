@@ -10,23 +10,25 @@ This project controls RGB LED strips for retro gaming consoles using current sen
 - 💾 **EEPROM Saving**: Saves selected color and brightness between power cycles.
 - 🌙 **Soft Off Delay**: Waits 5 seconds after power off before fading out.
 - ✨ **Smooth Fading**: Fades between colors and off-state with a polished transition.
+- 📶 **WiFi Support**: Configurable via captive portal for OTA and future expansion.
+- 🔄 **OTA Updates**: Update firmware wirelessly using ArduinoOTA.
 
 ## Hardware
 
-- RP2040-Zero
-- WS2812B LED strip
-- ZMCT103C current transformer
-- EC11 Rotary encoder with push button
-- Mean Well IRM-10-5 5V power supply
+- ESP32-C3 Super Mini  
+- WS2812B LED strip  
+- ZMCT103C current transformer  
+- EC11 Rotary encoder with push button  
+- TAS10-5-WEDT AC-DC 5V power supply  
 
 ## Controls
 
-| Action                   | Behavior                      |
-|--------------------------|-------------------------------|
-| Rotate encoder           | Change LED color              |
-| Click encoder (short)    | Save color or brightness      |
-| Long press (≥ 2s)        | Toggle brightness mode        |
-| Rotate in brightness mode| Adjust LED brightness         |
+| Action                    | Behavior                      |
+|---------------------------|-------------------------------|
+| Rotate encoder            | Change LED color              |
+| Click encoder (short)     | Save color or brightness      |
+| Long press (≥ 2s)         | Toggle brightness mode        |
+| Rotate in brightness mode | Adjust LED brightness         |
 
 ## Configuration
 
@@ -34,9 +36,7 @@ Adjust thresholds and pin assignments in `config.h` and `pins.h`.
 Predefined colors are listed in `colors.h`.
 
 | Constant                  | Description                                               |
-| ------------------------- | --------------------------------------------------------- |
-| `EEPROM_ADDR_COLOR`       | EEPROM address to store selected color index.             |
-| `EEPROM_ADDR_BRIGHTNESS`  | EEPROM address to store brightness level (0-255).         |
+|---------------------------|-----------------------------------------------------------|
 | `NUM_PIXELS`              | Number of WS2812 LEDs connected.                          |
 | `CURRENT_THRESHOLD`       | Baseline ADC threshold to detect console power.           |
 | `CURRENT_SENSE_OFFSET`    | Hysteresis value to prevent flickering near threshold.    |
@@ -46,16 +46,33 @@ Predefined colors are listed in `colors.h`.
 | `LONG_PRESS_THRESHOLD`    | Time required to trigger brightness mode with long press. |
 | `POWER_OFF_DELAY`         | Time to wait before fading LEDs off after current drops.  |
 
+## Connectivity
+
+### WiFi Setup
+
+- On first boot or if no WiFi is saved, the ESP32 starts an **Access Point** named `Console-LEDs-AP`.
+- Connect to that network from your phone/laptop.
+- A captive portal will appear. Enter your WiFi credentials.
+- The ESP32 will save the SSID and password for future use.
+
+If connection fails, the device reboots and retries WiFi/AP setup.
+
+### OTA Updates
+
+Once connected to WiFi:
+
+- The device starts the **Arduino OTA service**.
+- You can use the Arduino IDE or `arduino-cli` to push firmware updates over the network.
 
 ## Colors
+
 | Index | Color   | Default |
-|:-----:| ------- |:-------:|
+|:-----:|---------|:-------:|
 | 0     | Red     |    ✓    |
 | 1     | Green   |         |
 | 2     | Blue    |         |
 | 3     | Yellow  |         |
 | 4     | Magenta |         |
 | 5     | Orange  |         |
-| 6     | Purple  |         |
-| 7     | Cyan    |         |
-| 8     | White   |         |
+| 6     | Cyan    |         |
+| 7     | White   |         |
