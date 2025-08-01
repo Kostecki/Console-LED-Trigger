@@ -23,6 +23,8 @@ uint8_t currentBrightness = 128;
 
 unsigned long powerOffTime = 0;
 
+bool wifi_enabled = false;
+
 void updateLED(bool force)
 {
   uint32_t color = ledEnabled || force ? colors[currentColorIndex] : 0;
@@ -67,11 +69,23 @@ void setup()
   // Initialize Preferences
   prefs.begin("led-config", false);
 
-  // Setup WiFi and OTA
-  setupWiFiAndOTA(prefs);
-
+  // Initialize Pins
   pinMode(ENCODER_SW, INPUT_PULLUP);
   pinMode(CURRENT_SENSE_PIN, INPUT);
+  pinMode(WIFI_TOGGLE, INPUT_PULLUP);
+
+  wifi_enabled = digitalRead(WIFI_TOGGLE) == LOW;
+
+  // Setup WiFi and OTA
+  if (wifi_enabled)
+  {
+    Serial1.println("WiFi enabled, setting up WiFi and OTA...");
+    setupWiFiAndOTA(prefs);
+  }
+  else
+  {
+    Serial1.println("WiFi not enabled, skipping WiFi setup");
+  }
 
   attachInterrupt(digitalPinToInterrupt(ENCODER_A), []
                   { encoder.tick(); }, CHANGE);
@@ -100,7 +114,10 @@ void setup()
 
 void loop()
 {
-  ArduinoOTA.handle();
+  if (wifi_enabled)
+  {
+    ArduinoOTA.handle();
+  }
 
   int adc = analogRead(CURRENT_SENSE_PIN);
 
