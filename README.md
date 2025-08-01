@@ -74,23 +74,23 @@ Once connected to WiFi:
 
 ## BOM
 
-| Name                    | Quantity |
-|-------------------------|----------|
-| 1000uF                  | 1        |
-| 100nF                   | 4        |
-| 100uF                   | 1        |
-| 330R                    | 1        |
-| 1k                      | 1        |
-| 10k                     | 3        |
-| 1N4148TR                | 2        |
-| Pin Header 2.54mm 3-pin | 1        |
-| Pin Header 2.54mm 6-pin | 1        |
-| 15EDGRC-3.5-04P-14-00A  | 1        |
-| KF128-5.0-3P            | 2        |
-| 0PTF0078P               | 1        |
-| SN74AHCT125N            | 1        |
-| MCP6002-I/P-TUDI        | 1        |
-| TAS10-5-WEDT            | 1        |
-| EC110201E2J-HA1-005     | 1        |
-| ZMCT103C                | 1        |
-| ESP32-C3 Super Mini     | 1        |
+| Name                    | Quantity | Description                                |
+|-------------------------|----------|--------------------------------------------|
+| 1000uF                  | 1        | Electrolytic capacitor                     |
+| 100uF                   | 1        | Electrolytic capacitor                     |
+| 100nF                   | 4        | Ceramic capacitors                         |
+| 330R                    | 1        | Resistor                                   |
+| 1k                      | 1        | Resistor                                   |
+| 10k                     | 3        | Resistor                                   |
+| 1N4148TR                | 2        | Diode                                      |
+| Pin Header 2.54mm 3-pin | 1        | Jumper for Wi-Fi enable toggle             |
+| Pin Header 2.54mm 6-pin | 1        | UART programming/debug header              |
+| 15EDGRC-3.5-04P-14-00A  | 1        | 4-pin 5.0mm Pluggable terminal block       |
+| KF128-5.0-3P            | 2        | 3-pin 5.0mm Screw terminal block           |
+| 0PTF0078P               | 1        | PCB Glass fuse holder                      |
+| SN74AHCT125N            | 1        | Quad bus buffer IC (logic level shifter)   |
+| MCP6002-I/P             | 1        | Dual op-amp                                |
+| TAS10-5-WEDT            | 1        | 5V AC-DC isolated power module (10W)       |
+| EC110201E2J-HA1-005     | 1        | EC11 rotary encoder with switch            |
+| ZMCT103C                | 1        | Current transformer (AC sensing)           |
+| ESP32-C3 Super Mini     | 1        | Wi-Fi enabled MCU.                         |
