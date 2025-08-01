@@ -13,30 +13,6 @@ This project controls RGB LED strips for retro gaming consoles using current sen
 - 📶 **WiFi Support**: Configurable via captive portal for OTA and future expansion. (optional)
 - 🔄 **OTA Updates**: Update firmware wirelessly using ArduinoOTA. (optional)
 
-## BOM
-
-| Name                    | Quantity |
-|-------------------------|----------|
-| 1000uF                  | 1        |
-| 100nF                   | 4        |
-| 100uF                   | 1        |
-| 330R                    | 1        |
-| 1k                      | 1        |
-| 10k                     | 3        |
-| 1N4148TR                | 2        |
-| Pin Header 2.54mm 3-pin | 1        |
-| Pin Header 2.54mm 6-pin | 1        |
-| 15EDGRC-3.5-04P-14-00A  | 1        |
-| KF128-5.0-3P            | 2        |
-| 0PTF0078P               | 1        |
-| SN74AHCT125N            | 1        |
-| MCP6002-I/P-TUDI        | 1        |
-| TAS10-5-WEDT            | 1        |
-| EC110201E2J-HA1-005     | 1        |
-| ZMCT103C                | 1        |
-| ESP32-C3 Super Mini     | 1        |
-
-
 ## Controls
 
 | Action                    | Behavior                      |
@@ -96,3 +72,26 @@ Once connected to WiFi:
 | 5     | Orange  |         |
 | 6     | Cyan    |         |
 | 7     | White   |         |
+
+## BOM
+
+| Name                    | Quantity |
+|-------------------------|----------|
+| 1000uF                  | 1        |
+| 100nF                   | 4        |
+| 100uF                   | 1        |
+| 330R                    | 1        |
+| 1k                      | 1        |
+| 10k                     | 3        |
+| 1N4148TR                | 2        |
+| Pin Header 2.54mm 3-pin | 1        |
+| Pin Header 2.54mm 6-pin | 1        |
+| 15EDGRC-3.5-04P-14-00A  | 1        |
+| KF128-5.0-3P            | 2        |
+| 0PTF0078P               | 1        |
+| SN74AHCT125N            | 1        |
+| MCP6002-I/P-TUDI        | 1        |
+| TAS10-5-WEDT            | 1        |
+| EC110201E2J-HA1-005     | 1        |
+| ZMCT103C                | 1        |
+| ESP32-C3 Super Mini     | 1        |
