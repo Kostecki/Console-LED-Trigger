@@ -14,17 +14,6 @@ void setupWiFiAndOTA(Preferences &prefs)
 {
   WiFiManager wm;
 
-  // Custom MQTT parameters
-  WiFiManagerParameter p_mqtt_server("mqtt_server", "MQTT Server", prefs.getString("mqtt_server", "").c_str(), 40);
-  WiFiManagerParameter p_mqtt_port("mqtt_port", "MQTT Port", prefs.getString("mqtt_port", "1883").c_str(), 6);
-  WiFiManagerParameter p_mqtt_user("mqtt_user", "MQTT Username", prefs.getString("mqtt_user", "").c_str(), 32);
-  WiFiManagerParameter p_mqtt_pass("mqtt_pass", "MQTT Password", prefs.getString("mqtt_pass", "").c_str(), 32);
-
-  wm.addParameter(&p_mqtt_server);
-  wm.addParameter(&p_mqtt_port);
-  wm.addParameter(&p_mqtt_user);
-  wm.addParameter(&p_mqtt_pass);
-
   String apName = "Console-LEDs-" + getMacSuffix();
 
   if (!wm.autoConnect(apName.c_str()))
