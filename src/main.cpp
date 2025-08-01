@@ -80,7 +80,7 @@ void setup()
   if (wifi_enabled)
   {
     Serial1.println("WiFi enabled, setting up WiFi and OTA...");
-    setupWiFiAndOTA(prefs);
+    initWiFiAndOTA(prefs);
   }
   else
   {
