@@ -3,10 +3,10 @@
 #include <RotaryEncoder.h>
 #include <Adafruit_NeoPixel.h>
 
-#include "wifi_setup.h"
-#include "pins.h"
-#include "colors.h"
-#include "config.h"
+#include <wifi_setup.h>
+#include <pins.h>
+#include <colors.h>
+#include <config.h>
 
 // Preferences setup
 Preferences prefs;

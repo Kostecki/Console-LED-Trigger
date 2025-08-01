@@ -1,7 +1,5 @@
 #include <Arduino.h>
 
-#include "utils.h"
-
 String getMacSuffix()
 {
   uint64_t chipId = ESP.getEfuseMac();
