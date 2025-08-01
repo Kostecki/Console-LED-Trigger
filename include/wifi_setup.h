@@ -2,6 +2,14 @@
 #include <WiFiManager.h>
 #include <ArduinoOTA.h>
 
+String getMacSuffix()
+{
+  uint64_t chipId = ESP.getEfuseMac();
+  char suffix[7];
+  sprintf(suffix, "%06X", (uint32_t)(chipId & 0xFFFFFF));
+  return String(suffix);
+}
+
 void setupWiFiAndOTA(Preferences &prefs)
 {
   WiFiManager wm;
@@ -17,7 +25,9 @@ void setupWiFiAndOTA(Preferences &prefs)
   wm.addParameter(&p_mqtt_user);
   wm.addParameter(&p_mqtt_pass);
 
-  if (!wm.autoConnect("Console-LEDs-AP"))
+  String apName = "Console-LEDs-" + getMacSuffix();
+
+  if (!wm.autoConnect(apName.c_str()))
   {
     Serial1.println("⚠️ WiFi failed. Rebooting...");
     delay(3000);
@@ -50,6 +60,8 @@ void setupWiFiAndOTA(Preferences &prefs)
         else if (e == OTA_RECEIVE_ERROR) Serial1.println("Receive Failed");
         else if (e == OTA_END_ERROR) Serial1.println("End Failed"); });
 
+  ArduinoOTA.setHostname(apName.c_str());
   ArduinoOTA.begin();
+
   Serial1.println("📡 OTA ready");
 }
