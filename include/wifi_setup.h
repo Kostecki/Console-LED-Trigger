@@ -26,12 +26,6 @@ void setupWiFiAndOTA(Preferences &prefs)
   Serial1.print("✅ WiFi connected! IP: ");
   Serial1.println(WiFi.localIP());
 
-  // Save MQTT parameters
-  prefs.putString("mqtt_server", p_mqtt_server.getValue());
-  prefs.putString("mqtt_port", p_mqtt_port.getValue());
-  prefs.putString("mqtt_user", p_mqtt_user.getValue());
-  prefs.putString("mqtt_pass", p_mqtt_pass.getValue());
-
   // OTA setup
   ArduinoOTA
       .onStart([]()
