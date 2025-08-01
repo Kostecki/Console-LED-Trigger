@@ -7,7 +7,7 @@ This project controls RGB LED strips for retro gaming consoles using current sen
 - 🎮 **Automatic Power Detection**: Turns LEDs on/off based on console current draw.
 - 🌈 **Color Selection**: Rotate encoder to cycle through predefined colors.
 - 💡 **Brightness Adjustment**: Long-press (2s) to enter brightness mode, rotate to adjust.
-- 💾 **EEPROM Saving**: Saves selected color and brightness between power cycles.
+- 💾 **Persistent Settings**: Saves selected color and brightness between power cycles.
 - 🌙 **Soft Off Delay**: Waits 5 seconds after power off before fading out.
 - ✨ **Smooth Fading**: Fades between colors and off-state with a polished transition.
 - 📶 **WiFi Support**: Configurable via captive portal for OTA and future expansion. (optional)
