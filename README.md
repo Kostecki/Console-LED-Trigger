@@ -10,8 +10,8 @@ This project controls RGB LED strips for retro gaming consoles using current sen
 - 💾 **EEPROM Saving**: Saves selected color and brightness between power cycles.
 - 🌙 **Soft Off Delay**: Waits 5 seconds after power off before fading out.
 - ✨ **Smooth Fading**: Fades between colors and off-state with a polished transition.
-- 📶 **WiFi Support**: Configurable via captive portal for OTA and future expansion.
-- 🔄 **OTA Updates**: Update firmware wirelessly using ArduinoOTA.
+- 📶 **WiFi Support**: Configurable via captive portal for OTA and future expansion. (optional)
+- 🔄 **OTA Updates**: Update firmware wirelessly using ArduinoOTA. (optional)
 
 ## Hardware
 
@@ -45,6 +45,10 @@ Predefined colors are listed in `colors.h`.
 | `ENCODER_STEPS_PER_CLICK` | Encoder resolution adjustment.                            |
 | `LONG_PRESS_THRESHOLD`    | Time required to trigger brightness mode with long press. |
 | `POWER_OFF_DELAY`         | Time to wait before fading LEDs off after current drops.  |
+| `WIFI_TOGGLE`             | GPIO pin used to read the Wi-Fi enable jumper             |
+
+## Wi-Fi Enable Jumper
+Wi-Fi and OTA functionality is **only initialized if a jumper is placed** across the first two pins (left to right) of the 3-pin header at boot.
 
 ## Connectivity
 
