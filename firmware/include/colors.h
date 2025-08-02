@@ -7,8 +7,8 @@ const uint32_t colors[] = {
     Adafruit_NeoPixel::Color(0, 0, 255),    // Blue
     Adafruit_NeoPixel::Color(255, 255, 0),  // Yellow
     Adafruit_NeoPixel::Color(255, 0, 255),  // Magenta
-    Adafruit_NeoPixel::Color(255, 15, 0),   // Orange
     Adafruit_NeoPixel::Color(0, 255, 255),  // Cyan
+    Adafruit_NeoPixel::Color(21, 184, 134), // Teal
     Adafruit_NeoPixel::Color(255, 255, 255) // White
 };
 
