@@ -12,4 +12,5 @@ export default defineConfig({
     tanstackStart({ customViteReactPlugin: true }),
     viteReact(),
   ],
+  cacheDir: "node_modules/.vite",
 });
