@@ -11,7 +11,8 @@ This project controls RGB LED strips for retro gaming consoles using current sen
 - 🌙 **Soft Off Delay**: Waits 5 seconds after power off before fading out.
 - ✨ **Smooth Fading**: Fades between colors and off-state with a polished transition.
 - 📶 **WiFi Support**: Configurable via captive portal for OTA and future expansion. (optional)
-- 🔄 **OTA Updates**: Update firmware wirelessly using ArduinoOTA. (optional)
+- 🧭 **Dashboard Control**: View all connected modules, their status, and update settings  from a web UI. (requires WiFi)
+- 🔄 **OTA Updates**: Update firmware wirelessly using ArduinoOTA. (requires WiFi)
 
 ## Controls
 
@@ -51,6 +52,18 @@ Wi-Fi and OTA functionality is **only initialized if a jumper is placed** across
 - The ESP32 will save the SSID and password for future use.
 
 If connection fails, the device reboots and retries WiFi/AP setup.
+
+### Web Dashboard
+
+If Wi-Fi is enabled, modules will appear in the web dashboard.
+
+#### From the dashboard, you can:
+- View all online/offline devices
+- See current color, brightness, and power state
+- Update color and brightness
+- Change device display name
+
+The dashboard runs separately under `/dashboard`, built with TypeScript, TanStack, and Mantine.
 
 ### OTA Updates
 
