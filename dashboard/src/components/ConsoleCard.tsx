@@ -84,7 +84,7 @@ export function ConsoleCard({ board }: { board: Board }) {
 			shadow="sm"
 			radius="md"
 			key={board.id}
-			mb="md"
+			mb="xs"
 			padding={0}
 			opacity={board.status === 0 ? 0.5 : 1}
 		>
