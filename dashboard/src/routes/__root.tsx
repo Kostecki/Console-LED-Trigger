@@ -7,6 +7,7 @@ import {
 	MantineProvider,
 	mantineHtmlProps,
 } from "@mantine/core";
+import { Notifications } from "@mantine/notifications";
 import {
 	createRootRoute,
 	HeadContent,
@@ -17,6 +18,7 @@ import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
 import type { ReactNode } from "react";
 
 import "@mantine/core/styles.css";
+import "@mantine/notifications/styles.css";
 
 const theme = createTheme({});
 
@@ -31,7 +33,7 @@ export const Route = createRootRoute({
 				content: "width=device-width, initial-scale=1",
 			},
 			{
-				title: "TanStack Start Starter",
+				title: "Console LED Trigger",
 			},
 		],
 	}),
@@ -55,6 +57,7 @@ function RootDocument({ children }: Readonly<{ children: ReactNode }>) {
 			</head>
 			<body>
 				<MantineProvider theme={theme}>
+					<Notifications />
 					<Container mt="xl" size="xs">
 						{children}
 					</Container>
