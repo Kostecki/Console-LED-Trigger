@@ -245,3 +245,6 @@ dist
 
 # Arduino-generated folders
 build/
+
+# Automatically generated colors file
+firmware/include/colors.h
