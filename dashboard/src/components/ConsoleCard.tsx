@@ -23,19 +23,16 @@ import {
 } from "@tabler/icons-react";
 import { useState } from "react";
 
+import csvData from "../../../shared/colors.csv?raw";
 import type { Board, OnlineStatus } from "../../types/board";
-import { brightnessToPercentage } from "../utils";
+import { brightnessToPercentage, rgbToHex } from "../utils";
 
-const swatches = [
-	"#FF0000",
-	"#00FF00",
-	"#0000FF",
-	"#FFFF00",
-	"#FF00FF",
-	"#00FFFF",
-	"#15b886",
-	"#FFFFFF",
-];
+// Import colors from shared CSV file and turn into hex swatches
+const rawSwatches = csvData
+	.trim()
+	.split("\n")
+	.map((line) => line.split(",").map(Number));
+const swatches = rawSwatches.map(([r, g, b]) => rgbToHex(r, g, b));
 
 const showLedStatus = (ledsStatus: OnlineStatus) => {
 	return ledsStatus === 1 ? (
