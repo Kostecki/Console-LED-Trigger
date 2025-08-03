@@ -1,15 +1,30 @@
 import {
+	Accordion,
+	Box,
+	Button,
 	Card,
+	CardSection,
 	ColorPicker,
+	Flex,
 	Group,
+	LoadingOverlay,
 	SimpleGrid,
+	Slider,
 	Stack,
 	Text,
 } from "@mantine/core";
-import { IconBulb, IconBulbOff } from "@tabler/icons-react";
+import {
+	IconBrightness,
+	IconBulb,
+	IconBulbOff,
+	IconPalette,
+	IconPower,
+	IconWifi,
+} from "@tabler/icons-react";
 import { useState } from "react";
 
 import type { Board, OnlineStatus } from "../../types/board";
+import { brightnessToPercentage } from "../utils";
 
 const swatches = [
 	"#FF0000",
@@ -22,16 +37,46 @@ const swatches = [
 	"#FFFFFF",
 ];
 
-const ShowLedStatus = (ledsStatus: OnlineStatus) => {
+const showLedStatus = (ledsStatus: OnlineStatus) => {
 	return ledsStatus === 1 ? (
-		<IconBulb size={24} color="#FFB300" />
+		<IconBulb size={24} color="#FFB300" opacity={0.8} />
 	) : (
-		<IconBulbOff size={24} />
+		<IconBulbOff size={24} opacity={0.5} />
 	);
 };
 
+const AccordionLabel = ({ board }: { board: Board }) => (
+	<Group justify="space-between" align="center">
+		<Stack gap={0}>
+			<Text fw={500}>{board.name}</Text>
+			<Text size="xs" fw={400} c="dimmed" fs="italic">
+				{board.id}
+			</Text>
+		</Stack>
+
+		{showLedStatus(board.leds.status)}
+	</Group>
+);
+
 export function ConsoleCard({ board }: { board: Board }) {
-	const [value, onChange] = useState("rgba(197, 216, 153, 1)");
+	const [loading, setLoading] = useState(false);
+	const [color, onChangeColor] = useState(board.leds.color);
+	const [brightness, onChangeBrightness] = useState(
+		brightnessToPercentage(board.leds.brightness),
+	);
+
+	const submitSettings = () => {
+		setLoading(true);
+
+		setTimeout(() => {
+			setLoading(false);
+
+			console.log("Updating settings for board:", board.id);
+			console.log("New color:", color);
+			console.log("New brightness:", brightness);
+			// MQTT publish logic goes here
+		}, 2000);
+	};
 
 	return (
 		<Card
@@ -39,42 +84,137 @@ export function ConsoleCard({ board }: { board: Board }) {
 			shadow="sm"
 			radius="md"
 			key={board.id}
-			mb="lg"
+			mb="md"
+			padding={0}
 			opacity={board.status === 0 ? 0.5 : 1}
 		>
-			<Card.Section withBorder inheritPadding py="xs" mb="md">
-				<Group justify="space-between">
-					<Stack gap={0}>
-						<Text fw={500}>{board.name}</Text>
-						<Text size="xs" fw={400} c="dimmed" fs="italic">
-							{board.id}
-						</Text>
-					</Stack>
-					{ShowLedStatus(board.leds.status)}
-				</Group>
-			</Card.Section>
-
-			<SimpleGrid cols={2} spacing="md">
-				<ColorPicker
-					format="rgba"
-					value={value}
-					onChange={onChange}
-					swatchesPerRow={8}
-					swatches={swatches}
-				/>
-
-				<Stack>
-					<Text c="dimmed" size="sm">
-						LEDs: {board.leds.status ? "On" : "Off"}
-					</Text>
-					<Text c="dimmed" size="sm">
-						Color: {board.leds.color}
-					</Text>
-					<Text c="dimmed" size="sm">
-						Brightness: {board.leds.brightness}
-					</Text>
-				</Stack>
-			</SimpleGrid>
+			<Accordion
+				chevron={null}
+				style={{ borderLeft: `3px solid ${board.leds.color}` }}
+			>
+				<Accordion.Item value={board.id} key={board.id}>
+					<Accordion.Control aria-label={board.name}>
+						<AccordionLabel board={board} />
+					</Accordion.Control>
+					<Accordion.Panel
+						pos="relative"
+						style={{ borderTop: "1px solid rgba(128,128,128,0.125)" }}
+					>
+						<LoadingOverlay
+							visible={loading}
+							zIndex={1000}
+							overlayProps={{ radius: "sm", blur: 2 }}
+						/>
+						<SimpleGrid cols={{ base: 1, sm: 2 }} pt="xs">
+							<CardSection inheritPadding>
+								<SimpleGrid cols={2} spacing="sm" h="100%">
+									<Card>
+										<Flex
+											direction="column"
+											align="center"
+											justify="center"
+											h="100%"
+										>
+											<Box mb="xs">
+												<IconWifi size={35} opacity={0.75} />
+											</Box>
+											<Text>{board.status === 1 ? "Online" : "Offline"}</Text>
+											<Text size="sm" c="dimmed">
+												Status
+											</Text>
+										</Flex>
+									</Card>
+									<Card ta="center">
+										<Flex
+											direction="column"
+											align="center"
+											justify="center"
+											h="100%"
+										>
+											<Box mb="xs">
+												<IconPower size={30} opacity={0.75} />
+											</Box>
+											<Text>{board.leds.status === 1 ? "On" : "Off"}</Text>
+											<Text size="sm" c="dimmed">
+												LED Strip
+											</Text>
+										</Flex>
+									</Card>
+									<Card ta="center">
+										<Flex
+											direction="column"
+											align="center"
+											justify="center"
+											h="100%"
+										>
+											<Box mb="xs">
+												<IconPalette size={30} opacity={0.75} />
+											</Box>
+											<Text c={board.leds.color}>{board.leds.color}</Text>
+											<Text size="sm" c="dimmed">
+												Color
+											</Text>
+										</Flex>
+									</Card>
+									<Card ta="center">
+										<Flex
+											direction="column"
+											align="center"
+											justify="center"
+											h="100%"
+										>
+											<Box mb="xs">
+												<IconBrightness size={30} opacity={0.75} />
+											</Box>
+											<Text>
+												{brightnessToPercentage(board.leds.brightness)}%
+											</Text>
+											<Text size="sm" c="dimmed">
+												Brightness
+											</Text>
+										</Flex>
+									</Card>
+								</SimpleGrid>
+							</CardSection>
+							<Card.Section inheritPadding>
+								<ColorPicker
+									fullWidth
+									format="hex"
+									value={color}
+									onChange={onChangeColor}
+									swatchesPerRow={8}
+									swatches={swatches}
+									style={{
+										pointerEvents: board.status === 0 ? "none" : "auto",
+									}}
+								/>
+								<Box my="sm">
+									<Text size="sm" c="dimmed">
+										Brightness
+									</Text>
+									<Slider
+										color="blue"
+										value={brightness}
+										onChange={onChangeBrightness}
+										marks={[{ value: 50 }]}
+										label={(value) => `${value}%`}
+										disabled={!board.status}
+									/>
+								</Box>
+								<Button
+									fullWidth
+									mt="sm"
+									variant="default"
+									onClick={submitSettings}
+									disabled={!board.status}
+								>
+									Update Settings
+								</Button>
+							</Card.Section>
+						</SimpleGrid>
+					</Accordion.Panel>
+				</Accordion.Item>
+			</Accordion>
 		</Card>
 	);
 }
