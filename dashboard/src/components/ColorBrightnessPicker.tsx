@@ -1,7 +1,7 @@
 import { Box, Button, ColorPicker, Slider, Text } from "@mantine/core";
 import { notifications } from "@mantine/notifications";
+import csvData from "@shared/colors.csv?raw";
 import { useState } from "react";
-import csvData from "../../../shared/colors.csv?raw";
 import type { Board } from "../../types/board";
 import { brightnessToPercentage, rgbToHex } from "../utils";
 

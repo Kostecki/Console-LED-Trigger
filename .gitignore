@@ -248,3 +248,7 @@ build/
 
 # Automatically generated colors file
 firmware/include/colors.h
+
+dashboard/.nitro
+dashboard/.output
+dashboard/.tanstack

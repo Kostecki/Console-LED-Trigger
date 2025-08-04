@@ -1,0 +1,25 @@
+# Ignore deps and build output
+node_modules
+.output
+dist
+.cache
+.vite
+
+# Ignore logs and editor settings
+*.log
+*.tsbuildinfo
+npm-debug.log*
+pnpm-debug.log*
+
+# Ignore config files that shouldn't be inside container
+.dockerignore
+Dockerfile
+docker-compose.yml
+.env.local
+.env.*.local
+
+# Ignore test + tooling artifacts
+coverage
+biome.json
+.vscode
+.idea
