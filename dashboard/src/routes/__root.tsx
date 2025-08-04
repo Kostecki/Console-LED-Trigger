@@ -35,6 +35,36 @@ export const Route = createRootRoute({
 			{
 				title: "Console LED Trigger",
 			},
+			{
+				name: "apple-mobile-web-app-title",
+				content: "Console LED Trigger",
+			},
+		],
+		links: [
+			{
+				rel: "icon",
+				type: "image/png",
+				href: "/favicon/favicon-96x96.png",
+				sizes: "96x96",
+			},
+			{
+				rel: "icon",
+				type: "image/svg+xml",
+				href: "/favicon/favicon.svg",
+			},
+			{
+				rel: "shortcut icon",
+				href: "/favicon/favicon.ico",
+			},
+			{
+				rel: "apple-touch-icon",
+				href: "/favicon/apple-touch-icon.png",
+				sizes: "180x180",
+			},
+			{
+				rel: "manifest",
+				href: "/favicon/site.webmanifest",
+			},
 		],
 	}),
 	component: RootComponent,
@@ -61,6 +91,7 @@ function RootDocument({ children }: Readonly<{ children: ReactNode }>) {
 					<Container mt="xl" size="xs">
 						{children}
 					</Container>
+
 					<TanStackRouterDevtools position="bottom-right" />
 					<Scripts />
 				</MantineProvider>
