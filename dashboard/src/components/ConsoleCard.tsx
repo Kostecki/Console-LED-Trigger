@@ -42,7 +42,8 @@ const AccordionLabel = ({ board }: { board: Board }) => (
 		<Stack gap={0}>
 			<Text fw={500}>{board.name}</Text>
 			<Text size="xs" fw={400} c="dimmed" fs="italic">
-				{board.id}
+				{`${board.id} (${board.bootTime})`}
+				{/* TODO: Format bootTime */}
 			</Text>
 		</Stack>
 

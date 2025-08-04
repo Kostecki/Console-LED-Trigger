@@ -8,7 +8,8 @@ export type Leds = {
 
 export type Board = {
   id: string;
-  name: string;
   status: OnlineStatus;
+  name?: string;
+  bootTime: number;
   leds: Leds;
 };
