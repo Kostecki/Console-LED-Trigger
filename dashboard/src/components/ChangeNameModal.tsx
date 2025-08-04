@@ -9,7 +9,7 @@ import {
 import { useForm } from "@mantine/form";
 import { useDisclosure } from "@mantine/hooks";
 import { notifications } from "@mantine/notifications";
-import { IconEdit } from "@tabler/icons-react";
+import { IconTag } from "@tabler/icons-react";
 import { useBoardActions } from "hooks/useBoardActions";
 
 export function ChangeNameModal({ id, name }: { id: string; name?: string }) {
@@ -72,7 +72,7 @@ export function ChangeNameModal({ id, name }: { id: string; name?: string }) {
 
 			<Tooltip label="Edit Name">
 				<ActionIcon variant="default" aria-label="Edit Name" onClick={open}>
-					<IconEdit size={16} />
+					<IconTag size={16} />
 				</ActionIcon>
 			</Tooltip>
 		</>
