@@ -37,6 +37,8 @@ const showLedStatus = (ledsStatus: OnlineStatus) => {
 	return <IconBulb size={24} color={color} opacity={opacity} />;
 };
 
+// Format boot time into a human-readable string
+// Example: "Uptime: 1d 2h 30m"
 const formatBootTime = (bootTime: number) => {
 	const now = dayjs();
 	const boot = dayjs.unix(bootTime);
