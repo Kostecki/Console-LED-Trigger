@@ -27,7 +27,7 @@ const slightBorder = `1px solid ${slightBorderColor}`;
 
 const showLedStatus = (ledsStatus: OnlineStatus) => {
 	let opacity = 0.3;
-	let color = "black"; // Black for "OFF"
+	let color = "#000000"; // Black for "OFF"
 
 	if (ledsStatus === 1) {
 		opacity = 0.75;
