@@ -126,6 +126,7 @@ void publishState()
   doc["color"] = currentColorIndex;
   doc["brightness"] = currentBrightness;
   doc["bootTime"] = bootTime;
+  doc["name"] = deviceName;
 
   char payload[128];
   serializeJson(doc, payload, sizeof(payload));
@@ -271,6 +272,12 @@ void mqttCallback(char *topic, byte *payload, unsigned int length)
       prefs.putUChar("brightness", currentBrightness);
       strip.setBrightness(currentBrightness);
       updateLED(false);
+    }
+
+    if (doc["name"].is<const char *>())
+    {
+      deviceName = doc["name"].as<String>();
+      prefs.putString("name", deviceName);
     }
   }
   else if (topicStr.endsWith("/identify"))

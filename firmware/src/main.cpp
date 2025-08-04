@@ -9,6 +9,7 @@
 #include <pins.h>
 #include <colors.h>
 #include <config.h>
+#include <utils.h>
 
 // Preferences setup
 Preferences prefs;
@@ -23,6 +24,7 @@ RotaryEncoder encoder(ENCODER_A, ENCODER_B, RotaryEncoder::LatchMode::FOUR3);
 uint8_t currentColorIndex = 0;
 uint8_t currentBrightness = 128;
 
+String deviceName = "";
 unsigned long powerOffTime = 0;
 bool wifi_enabled = false;
 time_t bootTime = 0;
@@ -71,6 +73,14 @@ void setup()
 
   // Initialize Preferences
   prefs.begin("led-config", false);
+
+  // Handle device name
+  deviceName = prefs.getString("device_name", "");
+  if (deviceName.isEmpty())
+  {
+    deviceName = "Console-" + getMacSuffix();
+    prefs.putString("device_name", deviceName);
+  }
 
   // Initialize Pins
   pinMode(ENCODER_SW, INPUT_PULLUP);

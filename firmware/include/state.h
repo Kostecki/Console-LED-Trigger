@@ -9,6 +9,7 @@ extern uint8_t currentColorIndex;
 extern uint8_t currentBrightness;
 extern bool ledEnabled;
 extern time_t bootTime;
+extern String deviceName;
 
 void updateLED(bool force = false);
 void fadeToColor(uint32_t targetColor, uint8_t steps = 50, uint16_t delayMs = 25);
