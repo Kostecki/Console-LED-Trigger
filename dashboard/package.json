@@ -21,6 +21,7 @@
     "@tanstack/react-router": "^1.130.12",
     "@tanstack/react-router-devtools": "^1.130.13",
     "@tanstack/react-start": "^1.130.15",
+    "dayjs": "^1.11.13",
     "mqtt": "^5.14.0",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",

@@ -15,7 +15,7 @@ import {
 	IconPower,
 	IconWifi,
 } from "@tabler/icons-react";
-
+import { dayjs } from "lib/dayjs";
 import type { Board, OnlineStatus } from "../../types/board";
 import { brightnessToPercentage } from "../utils";
 import { ActionBar } from "./ActionBar";
@@ -27,14 +27,35 @@ const slightBorder = `1px solid ${slightBorderColor}`;
 
 const showLedStatus = (ledsStatus: OnlineStatus) => {
 	let opacity = 0.3;
-	let color = "black";
+	let color = "black"; // Black for "OFF"
 
 	if (ledsStatus === 1) {
 		opacity = 0.75;
-		color = "#FFB300";
+		color = "#FFB300"; // Yellow color for "ON"
 	}
 
 	return <IconBulb size={24} color={color} opacity={opacity} />;
+};
+
+const formatBootTime = (bootTime: number) => {
+	const now = dayjs();
+	const boot = dayjs.unix(bootTime);
+	const diffMs = now.diff(boot);
+
+	if (diffMs < 0) return "Uptime: -";
+
+	const diff = dayjs.duration(diffMs);
+
+	const days = Math.floor(diff.asDays());
+	const hours = diff.hours();
+	const minutes = diff.minutes();
+
+	const parts: string[] = [];
+	if (days > 0) parts.push(`${days}d`);
+	if (hours > 0 || days > 0) parts.push(`${hours}h`);
+	parts.push(`${minutes}m`);
+
+	return `Uptime: ${parts.join(" ")}`;
 };
 
 const AccordionLabel = ({ board }: { board: Board }) => (
@@ -42,8 +63,7 @@ const AccordionLabel = ({ board }: { board: Board }) => (
 		<Stack gap={0}>
 			<Text fw={500}>{board.name}</Text>
 			<Text size="xs" fw={400} c="dimmed" fs="italic">
-				{`${board.id} (${board.bootTime})`}
-				{/* TODO: Format bootTime */}
+				{`${board.id} | ${formatBootTime(board.bootTime)}`}
 			</Text>
 		</Stack>
 
