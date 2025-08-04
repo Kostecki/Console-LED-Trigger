@@ -2,8 +2,10 @@
 #include <ArduinoOTA.h>
 #include <RotaryEncoder.h>
 #include <Adafruit_NeoPixel.h>
+#include <time.h>
 
-#include <wifi_setup.h>
+#include <state.h>
+#include <wifi_mqtt_ota_setup.h>
 #include <pins.h>
 #include <colors.h>
 #include <config.h>
@@ -22,8 +24,8 @@ uint8_t currentColorIndex = 0;
 uint8_t currentBrightness = 128;
 
 unsigned long powerOffTime = 0;
-
 bool wifi_enabled = false;
+time_t bootTime = 0;
 
 void updateLED(bool force)
 {
@@ -40,7 +42,8 @@ uint8_t lerpColorComponent(uint8_t from, uint8_t to, uint8_t step, uint8_t maxSt
   return from + ((to - from) * step) / maxStep;
 }
 
-void fadeToColor(uint32_t targetColor, uint8_t steps = 50, uint16_t delayMs = 25)
+// Function definition without default arguments
+void fadeToColor(uint32_t targetColor, uint8_t steps, uint16_t delayMs)
 {
   uint32_t startColor = strip.getPixelColor(0);
 
@@ -79,13 +82,16 @@ void setup()
   // Setup WiFi and OTA
   if (wifi_enabled)
   {
-    Serial1.println("WiFi enabled, setting up WiFi and OTA...");
-    initWiFiAndOTA(prefs);
+    Serial1.println("WiFi enabled, setting up WiFi, MQTT, and OTA...");
+    initWiFiAndMQTTAndOTA(prefs);
   }
   else
   {
     Serial1.println("WiFi not enabled, skipping WiFi setup");
   }
+
+  bootTime = time(nullptr);
+  Serial1.printf("Boot time set: %lu\n", bootTime);
 
   attachInterrupt(digitalPinToInterrupt(ENCODER_A), []
                   { encoder.tick(); }, CHANGE);
@@ -116,6 +122,7 @@ void loop()
 {
   if (wifi_enabled)
   {
+    handleMqttLoop();
     ArduinoOTA.handle();
   }
 
@@ -151,6 +158,8 @@ void loop()
       fadeToColor(strip.Color(0, 0, 0));
     }
     lastLedEnabled = ledEnabled;
+
+    publishState();
   }
 
   // Handle encoder input using getDirection()
@@ -223,12 +232,16 @@ void loop()
         Serial1.println(currentBrightness);
         Serial1.println("Exiting brightness mode");
         inBrightnessMode = false;
+
+        publishState();
       }
       else
       {
         prefs.putUChar("color", currentColorIndex);
         Serial1.print("Saved color to Preferences: ");
         Serial1.println(currentColorIndex);
+
+        publishState();
       }
     }
   }
