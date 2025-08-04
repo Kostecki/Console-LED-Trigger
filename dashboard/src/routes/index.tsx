@@ -18,8 +18,6 @@ function Home() {
 function BoardsDashboard() {
 	const boards = useBoards();
 
-	console.log("Boards:", boards);
-
 	return (
 		<>
 			{boards.map((board) => (

@@ -1,6 +1,7 @@
 import { Box, Button, ColorPicker, Slider, Text } from "@mantine/core";
 import { notifications } from "@mantine/notifications";
 import csvData from "@shared/colors.csv?raw";
+import { useBoardActions } from "hooks/useBoardActions";
 import { useState } from "react";
 import type { Board } from "../../types/board";
 import { brightnessToPercentage, rgbToHex } from "../utils";
@@ -13,39 +14,43 @@ const rawSwatches = csvData
 const swatches = rawSwatches.map(([r, g, b]) => rgbToHex(r, g, b));
 
 export function ColorBrightnessPicker({ board }: { board: Board }) {
-	const [loading, setLoading] = useState(false);
 	const [color, onChangeColor] = useState(board.leds.color);
 	const [brightness, onChangeBrightness] = useState(
 		brightnessToPercentage(board.leds.brightness),
 	);
 
+	const { setColorSettings } = useBoardActions();
+
 	const submitSettings = () => {
-		setLoading(true);
+		try {
+			setColorSettings(board.id, color, brightness);
 
-		setTimeout(() => {
-			setLoading(false);
-
-			console.log("Updating settings for board:", board.id);
-			console.log("New color:", color);
-			console.log("New brightness:", brightness);
-
-			const message = (
-				<Text>
-					New configuration sent to board:{" "}
+			const successMessage = (
+				<Text size="sm">
+					<Text span>New color settings sent to board: </Text>
 					<Text span fw={700}>{` ${board.name} `}</Text>
 					<Text span>({board.id}).</Text>
 				</Text>
 			);
 
 			notifications.show({
-				title: "Update settings",
-				message,
+				title: "Success",
+				message: successMessage,
 				color: "green",
 				withBorder: true,
-				autoClose: 5000,
+				withCloseButton: false,
 			});
-			// TODO:MQTT publish logic goes here
-		}, 2000);
+		} catch (error) {
+			notifications.show({
+				title: "Error",
+				message: "Failed to send color settings to board.",
+				color: "red",
+				withBorder: true,
+				withCloseButton: false,
+			});
+
+			console.error("Error updating color settings:", error);
+		}
 	};
 
 	return (
@@ -80,9 +85,8 @@ export function ColorBrightnessPicker({ board }: { board: Board }) {
 				variant="default"
 				onClick={submitSettings}
 				disabled={!board.status}
-				loading={loading}
 			>
-				Update Settings
+				Update LED Settings
 			</Button>
 		</>
 	);
