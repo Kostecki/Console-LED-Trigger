@@ -76,7 +76,7 @@ export function useBoardActions() {
       throw new Error("MQTT client not connected");
     }
 
-    const topic = `console/${id}/update`;
+    const topic = `console/${id}/fw-update`;
     const payload = JSON.stringify({ firmwareUrl });
 
     return new Promise((resolve, reject) => {
