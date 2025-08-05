@@ -153,7 +153,13 @@ void connectToMqtt()
 
   String clientId = "board-" + getMacSuffix();
 
-  if (mqttClient.connect(clientId.c_str(), mqtt_user.c_str(), mqtt_pass.c_str()))
+  // Last Will and Testament (LWT) Config
+  String willTopic = "console/" + clientId + "/status";
+  int willQos = 0;
+  bool willRetain = true;
+  const char *willPayload = "0"; // Offline
+
+  if (mqttClient.connect(clientId.c_str(), mqtt_user.c_str(), mqtt_pass.c_str(), willTopic.c_str(), willQos, willRetain, willPayload))
   {
     Serial.println("MQTT connected");
 
