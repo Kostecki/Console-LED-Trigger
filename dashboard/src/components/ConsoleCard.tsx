@@ -17,7 +17,7 @@ import {
 } from "@tabler/icons-react";
 import { dayjs } from "lib/dayjs";
 import type { Board, OnlineStatus } from "../../types/board";
-import { brightnessToPercentage } from "../utils";
+import { brightnessToPercentage, colorIndexToHex } from "../utils";
 import { ActionBar } from "./ActionBar";
 import { ColorBrightnessPicker } from "./ColorBrightnessPicker";
 import { StatusSquare } from "./StatusSquare";
@@ -65,7 +65,7 @@ const AccordionLabel = ({ board }: { board: Board }) => (
 		<Stack gap={0}>
 			<Text fw={500}>{board.name}</Text>
 			<Text size="xs" fw={400} c="dimmed" fs="italic">
-				{`${board.id} | ${formatBootTime(board.bootTime)}`}
+				{`${board.id} | ${board.status === 1 ? formatBootTime(board.bootTime) : "Offline"}`}
 			</Text>
 		</Stack>
 
@@ -74,6 +74,8 @@ const AccordionLabel = ({ board }: { board: Board }) => (
 );
 
 export function ConsoleCard({ board }: { board: Board }) {
+	const boardColor = colorIndexToHex(board.leds.colorIndex);
+
 	return (
 		<Card
 			withBorder
@@ -86,7 +88,7 @@ export function ConsoleCard({ board }: { board: Board }) {
 		>
 			<Accordion
 				chevron={null}
-				style={{ borderLeft: `3px solid ${board.leds.color}` }}
+				style={{ borderLeft: `3px solid ${boardColor}` }}
 			>
 				<Accordion.Item value={board.id} key={board.id}>
 					<Accordion.Control aria-label={board.name}>
@@ -112,8 +114,8 @@ export function ConsoleCard({ board }: { board: Board }) {
 										<StatusSquare
 											icon={<IconPalette size={30} opacity={0.75} />}
 											label="Color"
-											value={board.leds.color.toUpperCase()}
-											color={board.leds.color}
+											value={boardColor.toUpperCase()}
+											color={boardColor}
 										/>
 										<StatusSquare
 											icon={<IconLamp size={30} opacity={0.75} />}

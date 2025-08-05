@@ -1,7 +1,7 @@
 export type OnlineStatus = 0 | 1;
 
 export type Leds = {
-  color: string;
+  colorIndex: number;
   brightness: number;
   status: OnlineStatus;
 };

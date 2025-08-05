@@ -1,20 +1,14 @@
 import { Box, Button, ColorPicker, Slider, Text } from "@mantine/core";
 import { notifications } from "@mantine/notifications";
-import csvData from "@shared/colors.csv?raw";
 import { useBoardActions } from "hooks/useBoardActions";
 import { useState } from "react";
 import type { Board } from "../../types/board";
-import { brightnessToPercentage, rgbToHex } from "../utils";
-
-// Import colors from shared CSV file (colors.csv) and turn into hex swatches
-const rawSwatches = csvData
-	.trim()
-	.split("\n")
-	.map((line) => line.split(",").map(Number));
-const swatches = rawSwatches.map(([r, g, b]) => rgbToHex(r, g, b));
+import { brightnessToPercentage, colorIndexToHex, swatches } from "../utils";
 
 export function ColorBrightnessPicker({ board }: { board: Board }) {
-	const [color, onChangeColor] = useState(board.leds.color);
+	const [color, onChangeColor] = useState(
+		colorIndexToHex(board.leds.colorIndex),
+	);
 	const [brightness, onChangeBrightness] = useState(
 		brightnessToPercentage(board.leds.brightness),
 	);

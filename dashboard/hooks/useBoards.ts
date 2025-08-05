@@ -3,7 +3,7 @@ import { useContext, useEffect, useState } from "react";
 import type { Board, OnlineStatus } from "types/board";
 
 const defaultLedState = {
-  color: "#000000",
+  colorIndex: -1,
   brightness: 0,
   status: 0,
   bootTime: Date.now() / 1000,
@@ -23,7 +23,7 @@ export function useBoards(): Board[] {
           name: id,
           status: 0,
           leds: {
-            color: defaultLedState.color,
+            colorIndex: defaultLedState.colorIndex,
             brightness: defaultLedState.brightness,
             status: defaultLedState.status,
           },
@@ -66,7 +66,7 @@ export function useBoards(): Board[] {
           name: parsed.name,
           bootTime: parsed.bootTime || defaultLedState.bootTime,
           leds: {
-            color: parsed.color || defaultLedState.color,
+            colorIndex: parsed.colorIndex || defaultLedState.colorIndex,
             brightness: parsed.brightness || defaultLedState.brightness,
             status: parsed.status || defaultLedState.status,
           },
