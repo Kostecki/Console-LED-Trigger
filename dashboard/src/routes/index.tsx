@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { MqttProvider } from "context/MqttProvider";
+import { NowProvider } from "context/NowContext";
 import { useBoards } from "hooks/useBoards";
 import { ConsoleCard } from "../components/ConsoleCard";
 
@@ -19,10 +20,10 @@ function BoardsDashboard() {
 	const boards = useBoards();
 
 	return (
-		<>
+		<NowProvider>
 			{boards.map((board) => (
 				<ConsoleCard key={board.id} board={board} />
 			))}
-		</>
+		</NowProvider>
 	);
 }

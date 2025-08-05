@@ -15,6 +15,7 @@ import {
 	IconPower,
 	IconWifi,
 } from "@tabler/icons-react";
+import { useNow } from "context/NowContext";
 import { dayjs } from "lib/dayjs";
 import type { Board, OnlineStatus } from "../../types/board";
 import { brightnessToPercentage, colorIndexToHex } from "../utils";
@@ -39,15 +40,14 @@ const showLedStatus = (ledsStatus: OnlineStatus) => {
 
 // Format boot time into a human-readable string
 // Example: "Uptime: 1d 2h 30m"
-const formatBootTime = (bootTime: number) => {
-	const now = dayjs();
+const formatBootTime = (bootTime: number, nowUnixMs: number) => {
 	const boot = dayjs.unix(bootTime);
-	const diffMs = now.diff(boot);
+	const now = dayjs(nowUnixMs);
 
+	const diffMs = now.diff(boot);
 	if (diffMs < 0) return "Uptime: -";
 
 	const diff = dayjs.duration(diffMs);
-
 	const days = Math.floor(diff.asDays());
 	const hours = diff.hours();
 	const minutes = diff.minutes();
@@ -60,18 +60,23 @@ const formatBootTime = (bootTime: number) => {
 	return `Uptime: ${parts.join(" ")}`;
 };
 
-const AccordionLabel = ({ board }: { board: Board }) => (
-	<Group justify="space-between" align="center">
-		<Stack gap={0}>
-			<Text fw={500}>{board.name}</Text>
-			<Text size="xs" fw={400} c="dimmed" fs="italic">
-				{`${board.id} | ${board.status === 1 ? formatBootTime(board.bootTime) : "Offline"}`}
-			</Text>
-		</Stack>
+const AccordionLabel = ({ board }: { board: Board }) => {
+	const now = useNow();
 
-		{showLedStatus(board.leds.status)}
-	</Group>
-);
+	return (
+		<Group justify="space-between" align="center">
+			<Stack gap={0}>
+				<Text fw={500}>{board.name}</Text>
+				<Text size="xs" fw={400} c="dimmed" fs="italic">
+					{`${board.id} | ${
+						board.status === 1 ? formatBootTime(board.bootTime, now) : "Offline"
+					}`}
+				</Text>
+			</Stack>
+			{showLedStatus(board.leds.status)}
+		</Group>
+	);
+};
 
 export function ConsoleCard({ board }: { board: Board }) {
 	const boardColor = colorIndexToHex(board.leds.colorIndex);
