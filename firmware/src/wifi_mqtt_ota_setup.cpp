@@ -140,8 +140,12 @@ void publishState()
   doc["bootTime"] = bootTime;
   doc["name"] = deviceName;
 
-  char payload[128];
-  serializeJson(doc, payload, sizeof(payload));
+  size_t needed = measureJson(doc) + 1;
+  char payload[needed];
+  serializeJson(doc, payload, needed);
+
+  Serial.print("size of payload: ");
+  Serial.println(needed);
 
   String topic = "console/board-" + getMacSuffix() + "/state";
   mqttClient.publish(topic.c_str(), payload, true);
