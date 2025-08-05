@@ -67,9 +67,9 @@ void fadeToColor(uint32_t targetColor, uint8_t steps, uint16_t delayMs)
 void setup()
 {
   // Initialize Serial for debugging
-  Serial1.begin(115200);
+  Serial.begin(115200);
   delay(1000);
-  Serial1.println("Console LED Trigger starting...");
+  Serial.println("Console LED Trigger starting...");
 
   // Initialize Preferences
   prefs.begin("led-config", false);
@@ -92,16 +92,16 @@ void setup()
   // Setup WiFi and OTA
   if (wifi_enabled)
   {
-    Serial1.println("WiFi enabled, setting up WiFi, MQTT, and OTA...");
+    Serial.println("WiFi enabled, setting up WiFi, MQTT, and OTA...");
     initWiFiAndMQTTAndOTA(prefs);
   }
   else
   {
-    Serial1.println("WiFi not enabled, skipping WiFi setup");
+    Serial.println("WiFi not enabled, skipping WiFi setup");
   }
 
   bootTime = time(nullptr);
-  Serial1.printf("Boot time set: %lu\n", bootTime);
+  Serial.printf("Boot time set: %lu\n", bootTime);
 
   attachInterrupt(digitalPinToInterrupt(ENCODER_A), []
                   { encoder.tick(); }, CHANGE);
@@ -110,11 +110,13 @@ void setup()
 
   // Read saved color index from Preferences
   currentColorIndex = prefs.getUChar("color", 0);
-  Serial1.println(currentColorIndex);
+  Serial.print("Current color index: ");
+  Serial.println(currentColorIndex);
 
   // Read saved brightness from Preferences
   currentBrightness = prefs.getUChar("brightness", 128);
-  Serial1.println(currentBrightness);
+  Serial.print("Current brightness: ");
+  Serial.println(currentBrightness);
 
   strip.begin();
   strip.setBrightness(currentBrightness);
@@ -158,7 +160,7 @@ void loop()
 
   if (ledEnabled != lastLedEnabled)
   {
-    Serial1.println(ledEnabled ? "Turning ON LEDs" : "Turning OFF LEDs");
+    Serial.println(ledEnabled ? "Turning ON LEDs" : "Turning OFF LEDs");
     if (ledEnabled)
     {
       fadeToColor(colors[currentColorIndex]);
@@ -231,16 +233,16 @@ void loop()
     if (pressDuration >= LONG_PRESS_THRESHOLD)
     {
       inBrightnessMode = !inBrightnessMode;
-      Serial1.println(inBrightnessMode ? "Entered brightness mode" : "Exited brightness mode");
+      Serial.println(inBrightnessMode ? "Entered brightness mode" : "Exited brightness mode");
     }
     else
     {
       if (inBrightnessMode)
       {
         prefs.putUChar("brightness", currentBrightness);
-        Serial1.print("Saved brightness: ");
-        Serial1.println(currentBrightness);
-        Serial1.println("Exiting brightness mode");
+        Serial.print("Saved brightness: ");
+        Serial.println(currentBrightness);
+        Serial.println("Exiting brightness mode");
         inBrightnessMode = false;
 
         publishState();
@@ -248,8 +250,8 @@ void loop()
       else
       {
         prefs.putUChar("color", currentColorIndex);
-        Serial1.print("Saved color to Preferences: ");
-        Serial1.println(currentColorIndex);
+        Serial.print("Saved color to Preferences: ");
+        Serial.println(currentColorIndex);
 
         publishState();
       }
