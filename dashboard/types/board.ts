@@ -1,7 +1,9 @@
 export type OnlineStatus = 0 | 1;
 
 export type Leds = {
+  colorMode: "palette" | "custom";
   colorIndex: number;
+  customColor: string;
   brightness: number;
   status: OnlineStatus;
 };

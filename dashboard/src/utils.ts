@@ -1,4 +1,5 @@
 import csvData from "@shared/colors.csv?raw";
+import type { Board } from "types/board";
 
 const rgbToHex = (r: number, g: number, b: number): string => {
   const toHex = (num: number): string => {
@@ -20,10 +21,29 @@ export const brightnessToPercentage = (brightness: number): number => {
   return Math.round((brightness / 255) * 100);
 };
 
-export const colorIndexToHex = (colorIndex: number): string => {
-  if (colorIndex < 0 || colorIndex >= swatches.length) {
-    return "#000000";
+export const percentageToBrightness = (percentage: number): number => {
+  return Math.round((percentage / 100) * 255);
+};
+
+export const displayColor = (board: Board): string => {
+  if (board.leds.colorMode === "custom") {
+    const outputColor = board.leds.customColor;
+    if (!outputColor.startsWith("#")) {
+      return `#${outputColor}`;
+    }
+    return outputColor;
   }
 
-  return swatches[colorIndex];
+  if (
+    board.leds.colorMode === "palette" &&
+    board.leds.colorIndex >= 0 &&
+    board.leds.colorIndex < swatches.length
+  ) {
+    const colorIndex = board.leds.colorIndex;
+    return swatches[colorIndex];
+  }
+
+  // TODO: Maybe do something with "white"?
+
+  return "#000000"; // Default fallback color
 };

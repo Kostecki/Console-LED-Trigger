@@ -18,7 +18,7 @@ import {
 import { useNow } from "context/NowContext";
 import { dayjs } from "lib/dayjs";
 import type { Board, OnlineStatus } from "../../types/board";
-import { brightnessToPercentage, colorIndexToHex } from "../utils";
+import { brightnessToPercentage, displayColor } from "../utils";
 import { ActionBar } from "./ActionBar";
 import { ColorBrightnessPicker } from "./ColorBrightnessPicker";
 import { StatusSquare } from "./StatusSquare";
@@ -79,7 +79,7 @@ const AccordionLabel = ({ board }: { board: Board }) => {
 };
 
 export function ConsoleCard({ board }: { board: Board }) {
-	const boardColor = colorIndexToHex(board.leds.colorIndex);
+	const boardColor = displayColor(board);
 
 	return (
 		<Card

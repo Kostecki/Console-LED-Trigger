@@ -1,5 +1,6 @@
 import { MqttContext } from "context/MqttProvider";
 import { useContext } from "react";
+import { percentageToBrightness, swatches } from "src/utils";
 
 export function useBoardActions() {
   const client = useContext(MqttContext);
@@ -33,8 +34,15 @@ export function useBoardActions() {
       throw new Error("MQTT client not connected");
     }
 
+    const colorIndex = swatches.indexOf(color);
+    const jsonBody = {
+      color: colorIndex >= 0 ? colorIndex : -1,
+      customColor: colorIndex >= 0 ? null : color,
+      brightness: percentageToBrightness(brightness),
+    };
+
     const topic = `console/${id}/set`;
-    const payload = JSON.stringify({ color, brightness });
+    const payload = JSON.stringify(jsonBody);
 
     return new Promise((resolve, reject) => {
       client.publish(topic, payload, { qos: 1 }, (err) => {

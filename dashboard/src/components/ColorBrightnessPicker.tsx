@@ -3,12 +3,10 @@ import { notifications } from "@mantine/notifications";
 import { useBoardActions } from "hooks/useBoardActions";
 import { useState } from "react";
 import type { Board } from "../../types/board";
-import { brightnessToPercentage, colorIndexToHex, swatches } from "../utils";
+import { brightnessToPercentage, displayColor, swatches } from "../utils";
 
 export function ColorBrightnessPicker({ board }: { board: Board }) {
-	const [color, onChangeColor] = useState(
-		colorIndexToHex(board.leds.colorIndex),
-	);
+	const [color, onChangeColor] = useState(displayColor(board));
 	const [brightness, onChangeBrightness] = useState(
 		brightnessToPercentage(board.leds.brightness),
 	);
