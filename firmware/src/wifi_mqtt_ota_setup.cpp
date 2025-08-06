@@ -79,6 +79,7 @@ void initWiFiAndMQTTAndOTA(Preferences &prefs)
   prefs.putString("mqtt_pass", mqtt_pass);
 
   // NTP time sync
+  Serial.println();
   Serial.println("Syncing NTP time...");
   configTime(0, 0, "dk.pool.ntp.org", "time.google.com");
 
@@ -110,7 +111,8 @@ void initWiFiAndMQTTAndOTA(Preferences &prefs)
   ArduinoOTA.setHostname(apName.c_str());
   ArduinoOTA.begin();
 
-  Serial.printf("OTA ready. Hostname: %s.local\n", apName.c_str());
+  Serial.println();
+  Serial.printf("OTA Ready. Hostname: %s.local\n", apName.c_str());
 }
 
 void publishState()
@@ -139,6 +141,7 @@ void publishState()
 
 void connectToMqtt()
 {
+  Serial.println();
   Serial.println("Connecting to MQTT...");
 
   String clientId = "board-" + getMacSuffix();

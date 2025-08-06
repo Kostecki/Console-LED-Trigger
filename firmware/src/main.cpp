@@ -131,13 +131,25 @@ void setup()
   currentColorIndex = prefs.getUChar("color_index", 0);
   String hex = prefs.getString("custom_color", "000000");
   customColor = (uint32_t)strtoul(hex.c_str(), nullptr, 16);
-  Serial.print("Current color index: ");
-  Serial.println(currentColorIndex);
+  Serial.println();
+  Serial.print("Color mode: ");
+  Serial.println(colorModeToString(colorMode));
+  if (colorMode == ColorMode::Custom)
+  {
+    Serial.print("Custom color: #");
+    Serial.println(String(customColor, HEX));
+  }
+  else
+  {
+    Serial.print("Current color index: ");
+    Serial.println(currentColorIndex);
+  }
 
   // Read saved brightness from Preferences
   currentBrightness = prefs.getUChar("brightness", 128);
   Serial.print("Current brightness: ");
   Serial.println(currentBrightness);
+  Serial.println();
 
   strip.begin();
   strip.setBrightness(currentBrightness);
