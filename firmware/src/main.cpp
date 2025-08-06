@@ -2,6 +2,7 @@
 #include <ArduinoOTA.h>
 #include <RotaryEncoder.h>
 #include <Adafruit_NeoPixel.h>
+#include <WiFiManager.h>
 #include <time.h>
 
 #include <state.h>
@@ -84,10 +85,38 @@ void fadeToColor(uint32_t targetColor, uint8_t steps, uint16_t delayMs)
 
 void setup()
 {
+  // Turn off built-in LED initially
+  digitalWrite(BUILTIN_LED_PIN, HIGH);
+
   // Initialize Serial for debugging
   Serial.begin(115200);
   delay(1000);
+  Serial.println();
   Serial.println("Console LED Trigger starting...");
+
+  // Initialize Pins
+  pinMode(ENCODER_SW, INPUT_PULLUP);
+  pinMode(CURRENT_SENSE_PIN, INPUT);
+  pinMode(WIFI_TOGGLE, INPUT_PULLUP);
+  pinMode(BUILTIN_LED_PIN, OUTPUT);
+
+  if (digitalRead(ENCODER_SW) == LOW)
+  {
+    for (int i = 0; i < 5; ++i)
+    {
+      digitalWrite(BUILTIN_LED_PIN, LOW);
+      delay(500);
+      digitalWrite(BUILTIN_LED_PIN, HIGH);
+      delay(500);
+    }
+
+    Serial.println("Reset mode detected. Resetting WiFi Manager...");
+    WiFiManager wifiManager;
+    wifiManager.resetSettings();
+    digitalWrite(BUILTIN_LED_PIN, LOW);
+    delay(3000);
+    ESP.restart();
+  }
 
   // Initialize Preferences
   prefs.begin("led-config", false);
@@ -107,6 +136,7 @@ void setup()
   // Setup WiFi and OTA
   if (wifi_enabled)
   {
+    Serial.println();
     Serial.println("WiFi enabled, setting up WiFi, MQTT, and OTA...");
     initWiFiAndMQTTAndOTA(prefs);
   }
