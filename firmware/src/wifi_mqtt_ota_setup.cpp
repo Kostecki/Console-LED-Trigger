@@ -51,7 +51,7 @@ void initWiFiAndMQTTAndOTA(Preferences &prefs)
   // Connect WiFi
   if (!wm.autoConnect(apName.c_str()))
   {
-    Serial.println("WiFi failed. Rebooting...");
+    Serial.println("WiFi failed. Rebooting");
     delay(3000);
     ESP.restart();
   }
@@ -80,7 +80,7 @@ void initWiFiAndMQTTAndOTA(Preferences &prefs)
 
   // NTP time sync
   Serial.println();
-  Serial.println("Syncing NTP time...");
+  Serial.println("Syncing NTP time");
   configTime(0, 0, "dk.pool.ntp.org", "time.google.com");
 
   // MQTT setup
@@ -94,7 +94,7 @@ void initWiFiAndMQTTAndOTA(Preferences &prefs)
   // OTA setup
   ArduinoOTA
       .onStart([]()
-               { Serial.println("OTA update starting..."); })
+               { Serial.println("OTA update starting"); })
       .onEnd([]()
              { Serial.println("\nOTA complete"); })
       .onProgress([](unsigned int p, unsigned int t)
@@ -117,7 +117,7 @@ void initWiFiAndMQTTAndOTA(Preferences &prefs)
 
 void publishState()
 {
-  Serial.println("Publishing state...");
+  Serial.println("Publishing state");
 
   JsonDocument doc;
   doc["enabled"] = ledEnabled;
@@ -142,7 +142,7 @@ void publishState()
 void connectToMqtt()
 {
   Serial.println();
-  Serial.println("Connecting to MQTT...");
+  Serial.println("Connecting to MQTT");
 
   String clientId = "board-" + getMacSuffix();
 
@@ -252,7 +252,7 @@ void performOTAUpdate(const String &url)
     return;
   }
 
-  Serial.println("OTA update complete! Rebooting...");
+  Serial.println("OTA update complete! Rebooting");
   http.end();
   delay(1000);
   ESP.restart();
@@ -340,7 +340,7 @@ void mqttCallback(char *topic, byte *payload, unsigned int length)
 
     for (int i = 0; i < 3; ++i)
     {
-      Serial.printf("Identifying... iteration %d\n", i + 1);
+      Serial.printf("Identifying iteration %d\n", i + 1);
       fadeToColor(strip.Color(255, 255, 255), 10, 15);
       delay(100);
       fadeToColor(originalColor, 10, 15);

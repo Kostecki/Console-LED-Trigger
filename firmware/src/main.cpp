@@ -36,6 +36,8 @@ unsigned long powerOffTime = 0;
 bool wifi_enabled = false;
 time_t bootTime = 0;
 
+static bool wasResetButtonPressed = false;
+
 void updateLED(bool force)
 {
   uint32_t color = 0;
@@ -85,38 +87,18 @@ void fadeToColor(uint32_t targetColor, uint8_t steps, uint16_t delayMs)
 
 void setup()
 {
-  // Turn off built-in LED initially
-  digitalWrite(BUILTIN_LED_PIN, HIGH);
 
   // Initialize Serial for debugging
   Serial.begin(115200);
   delay(1000);
   Serial.println();
-  Serial.println("Console LED Trigger starting...");
+  Serial.println("Console LED Trigger starting");
 
   // Initialize Pins
   pinMode(ENCODER_SW, INPUT_PULLUP);
   pinMode(CURRENT_SENSE_PIN, INPUT);
   pinMode(WIFI_TOGGLE, INPUT_PULLUP);
-  pinMode(BUILTIN_LED_PIN, OUTPUT);
-
-  if (digitalRead(ENCODER_SW) == LOW)
-  {
-    for (int i = 0; i < 5; ++i)
-    {
-      digitalWrite(BUILTIN_LED_PIN, LOW);
-      delay(500);
-      digitalWrite(BUILTIN_LED_PIN, HIGH);
-      delay(500);
-    }
-
-    Serial.println("Reset mode detected. Resetting WiFi Manager...");
-    WiFiManager wifiManager;
-    wifiManager.resetSettings();
-    digitalWrite(BUILTIN_LED_PIN, LOW);
-    delay(3000);
-    ESP.restart();
-  }
+  pinMode(WIFI_RESET, INPUT_PULLUP);
 
   // Initialize Preferences
   prefs.begin("led-config", false);
@@ -137,12 +119,12 @@ void setup()
   if (wifi_enabled)
   {
     Serial.println();
-    Serial.println("WiFi enabled, setting up WiFi, MQTT, and OTA...");
+    Serial.println("WiFi Enabled: Setting up WiFi, MQTT, and OTA");
     initWiFiAndMQTTAndOTA(prefs);
   }
   else
   {
-    Serial.println("WiFi not enabled, skipping WiFi setup");
+    Serial.println("WiFi Disabled: Skipping WiFi, MQTT and OTA setup");
   }
 
   bootTime = getSyncedUnixTime();
@@ -192,6 +174,33 @@ void setup()
 
 void loop()
 {
+  // Handle WiFi reset button
+  bool resetBtnPressed = digitalRead(WIFI_RESET) == LOW;
+  if (resetBtnPressed && !wasResetButtonPressed)
+  {
+    delay(50);
+    if (digitalRead(WIFI_RESET) == LOW)
+    {
+      Serial.println();
+      Serial.print("Reset button pressed:");
+      if (wifi_enabled)
+      {
+        Serial.println(" Resetting WiFi and MQTT settings");
+        WiFiManager wifiManager;
+        wifiManager.resetSettings();
+        Serial.println("WiFi and MQTT settings reset. Restarting");
+      }
+      else
+      {
+        Serial.println(" Restarting without resetting WiFi and MQTT settings");
+      }
+      Serial.println();
+
+      ESP.restart();
+    }
+  }
+  wasResetButtonPressed = resetBtnPressed;
+
   if (wifi_enabled)
   {
     handleMqttLoop();
