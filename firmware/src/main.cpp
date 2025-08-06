@@ -118,7 +118,7 @@ void setup()
     Serial.println("WiFi not enabled, skipping WiFi setup");
   }
 
-  bootTime = time(nullptr);
+  bootTime = getSyncedUnixTime();
   Serial.printf("Boot time set: %lu\n", bootTime);
 
   attachInterrupt(digitalPinToInterrupt(ENCODER_A), []

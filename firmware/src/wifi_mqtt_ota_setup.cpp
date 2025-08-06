@@ -58,6 +58,7 @@ void initWiFiAndMQTTAndOTA(Preferences &prefs)
 
   Serial.print("WiFi connected! IP: ");
   Serial.println(WiFi.localIP());
+  delay(3000);
 
   // Save MQTT config
   mqtt_server = p_mqtt_server.getValue();
@@ -79,24 +80,7 @@ void initWiFiAndMQTTAndOTA(Preferences &prefs)
 
   // NTP time sync
   Serial.println("Syncing NTP time...");
-  configTime(0, 0, "pool.ntp.org", "time.nist.gov");
-
-  time_t now = time(nullptr);
-  int retry = 0;
-  while (now < 100000 && retry++ < 30)
-  {
-    delay(100);
-    now = time(nullptr);
-  }
-
-  if (now < 100000)
-  {
-    Serial.println("Failed to sync NTP time");
-  }
-  else
-  {
-    Serial.printf("NTP time synced: %lu\n", now);
-  }
+  configTime(0, 0, "dk.pool.ntp.org", "time.google.com");
 
   // MQTT setup
   if (mqttConfigValid)
