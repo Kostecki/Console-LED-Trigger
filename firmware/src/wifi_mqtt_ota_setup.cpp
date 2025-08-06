@@ -135,17 +135,19 @@ void publishState()
 
   JsonDocument doc;
   doc["enabled"] = ledEnabled;
-  doc["colorIndex"] = currentColorIndex;
   doc["brightness"] = currentBrightness;
   doc["bootTime"] = bootTime;
   doc["name"] = deviceName;
 
+  doc["colorMode"] = (colorMode == ColorMode::Palette) ? "palette" : "custom";
+  doc["colorIndex"] = currentColorIndex;
+  char hexColor[8];
+  snprintf(hexColor, sizeof(hexColor), "%06X", customColor);
+  doc["customColor"] = String("#") + hexColor;
+
   size_t needed = measureJson(doc) + 1;
   char payload[needed];
   serializeJson(doc, payload, needed);
-
-  Serial.print("size of payload: ");
-  Serial.println(needed);
 
   String topic = "console/board-" + getMacSuffix() + "/state";
   mqttClient.publish(topic.c_str(), payload, true);
@@ -280,22 +282,48 @@ void mqttCallback(char *topic, byte *payload, unsigned int length)
 
   if (topicStr.endsWith("/set"))
   {
+    Serial.println("Received set command");
+    bool stateChanged = false;
+
     if (doc["color"].is<int>())
     {
+      Serial.println("Setting color");
+
       int colorIndex = doc["color"];
       if (colorIndex >= 0 && colorIndex < NUM_COLORS)
       {
+        stateChanged = true;
+        colorMode = ColorMode::Palette;
         currentColorIndex = colorIndex;
-        prefs.putUChar("color", currentColorIndex);
+        Serial.printf("Setting color index to %d\n", doc["color"].as<int>());
+        prefs.putUChar("color_mode", static_cast<uint8_t>(colorMode));
+        prefs.putUChar("color_index", currentColorIndex);
+        updateLED(true);
+      }
+      else if (colorIndex == -1 && doc["customColor"].is<const char *>())
+      {
+        stateChanged = true;
+        colorMode = ColorMode::Custom;
+        String hex = doc["customColor"].as<const char *>();
+        if (hex.startsWith("#"))
+        {
+          hex = hex.substring(1);
+        }
+        customColor = (uint32_t)strtoul(hex.c_str(), nullptr, 16);
+        Serial.printf("Setting custom color to %s\n", hex.c_str());
+        prefs.putUChar("color_mode", static_cast<uint8_t>(colorMode));
+        prefs.putString("custom_color", hex);
         updateLED(true);
       }
     }
 
     if (doc["brightness"].is<int>())
     {
+      stateChanged = true;
       int brightness = doc["brightness"];
       brightness = constrain(brightness, 0, 255);
       currentBrightness = brightness;
+      Serial.printf("Setting brightness to %d\n", currentBrightness);
       prefs.putUChar("brightness", currentBrightness);
       strip.setBrightness(currentBrightness);
       updateLED(false);
@@ -303,28 +331,47 @@ void mqttCallback(char *topic, byte *payload, unsigned int length)
 
     if (doc["name"].is<const char *>())
     {
+      stateChanged = true;
       deviceName = doc["name"].as<String>();
+      Serial.printf("Setting device name to '%s'\n", deviceName.c_str());
       prefs.putString("name", deviceName);
+    }
+
+    if (stateChanged)
+    {
+      publishState();
     }
   }
   else if (topicStr.endsWith("/identify"))
   {
+    Serial.println("Received identify command");
+
+    // Compute current color just once:
+    uint32_t originalColor = (colorMode == ColorMode::Palette && currentColorIndex < NUM_COLORS)
+                                 ? colors[currentColorIndex]
+                                 : customColor;
+
     for (int i = 0; i < 3; ++i)
     {
+      Serial.printf("Identifying... iteration %d\n", i + 1);
       fadeToColor(strip.Color(255, 255, 255), 10, 15);
       delay(100);
-      fadeToColor(colors[currentColorIndex], 10, 15);
+      fadeToColor(originalColor, 10, 15);
     }
   }
   else if (topicStr.endsWith("/reboot"))
   {
+    Serial.println("Received reboot command");
     delay(500);
     ESP.restart();
   }
   else if (topicStr.endsWith("/fw-update"))
   {
+    Serial.println("Received firmware update command");
+
     if (doc["url"].is<const char *>())
     {
+      Serial.printf("Firmware update URL: %s\n", doc["url"].as<String>().c_str());
       performOTAUpdate(doc["url"].as<String>());
     }
   }

@@ -3,9 +3,17 @@
 #include <Adafruit_NeoPixel.h>
 #include <Preferences.h>
 
+enum class ColorMode : uint8_t
+{
+  Palette = 0,
+  Custom = 1
+};
+
 extern Adafruit_NeoPixel strip;
 extern Preferences prefs;
 extern uint8_t currentColorIndex;
+extern uint32_t customColor;
+extern ColorMode colorMode;
 extern uint8_t currentBrightness;
 extern bool ledEnabled;
 extern time_t bootTime;

@@ -21,7 +21,13 @@ bool inBrightnessMode = false;
 
 // Encoder Setup
 RotaryEncoder encoder(ENCODER_A, ENCODER_B, RotaryEncoder::LatchMode::FOUR3);
+
+// Color management
+ColorMode colorMode = ColorMode::Palette;
 uint8_t currentColorIndex = 0;
+uint32_t customColor = 0x000000;
+
+// Current brightness
 uint8_t currentBrightness = 128;
 
 String deviceName = "";
@@ -31,11 +37,23 @@ time_t bootTime = 0;
 
 void updateLED(bool force)
 {
-  uint32_t color = ledEnabled || force ? colors[currentColorIndex] : 0;
+  uint32_t color = 0;
+  if (ledEnabled || force)
+  {
+    if (colorMode == ColorMode::Palette && currentColorIndex < NUM_COLORS)
+    {
+      color = colors[currentColorIndex];
+    }
+    else
+    {
+      color = customColor;
+    }
+  }
   for (int i = 0; i < NUM_PIXELS; ++i)
   {
     strip.setPixelColor(i, color);
   }
+
   strip.show();
 }
 
@@ -109,7 +127,10 @@ void setup()
                   { encoder.tick(); }, CHANGE);
 
   // Read saved color index from Preferences
-  currentColorIndex = prefs.getUChar("color", 0);
+  colorMode = static_cast<ColorMode>(prefs.getUChar("color_mode", 0));
+  currentColorIndex = prefs.getUChar("color_index", 0);
+  String hex = prefs.getString("custom_color", "000000");
+  customColor = (uint32_t)strtoul(hex.c_str(), nullptr, 16);
   Serial.print("Current color index: ");
   Serial.println(currentColorIndex);
 
@@ -163,7 +184,11 @@ void loop()
     Serial.println(ledEnabled ? "Turning ON LEDs" : "Turning OFF LEDs");
     if (ledEnabled)
     {
-      fadeToColor(colors[currentColorIndex]);
+      uint32_t fadeTarget = (colorMode == ColorMode::Palette && currentColorIndex < NUM_COLORS)
+                                ? colors[currentColorIndex]
+                                : customColor;
+
+      fadeToColor(fadeTarget);
     }
     else
     {
@@ -192,7 +217,10 @@ void loop()
     }
     else
     {
+      colorMode = ColorMode::Palette;
       currentColorIndex = (currentColorIndex + delta + NUM_COLORS) % NUM_COLORS;
+      prefs.putUChar("color_mode", static_cast<uint8_t>(colorMode));
+      prefs.putUChar("color_index", currentColorIndex);
       updateLED(false);
     }
   }
@@ -249,7 +277,9 @@ void loop()
       }
       else
       {
-        prefs.putUChar("color", currentColorIndex);
+        colorMode = ColorMode::Palette;
+        prefs.putUChar("color_mode", static_cast<uint8_t>(colorMode));
+        prefs.putUChar("color_index", currentColorIndex);
         Serial.print("Saved color to Preferences: ");
         Serial.println(currentColorIndex);
 
