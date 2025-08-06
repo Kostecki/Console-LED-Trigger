@@ -93,17 +93,14 @@ void setup()
   prefs.begin("led-config", false);
 
   // Handle device name
-  deviceName = prefs.getString("device_name", "");
+  deviceName = prefs.getString("name", "");
   if (deviceName.isEmpty())
   {
     deviceName = "Console-" + getMacSuffix();
-    prefs.putString("device_name", deviceName);
+    prefs.putString("name", deviceName);
   }
-
-  // Initialize Pins
-  pinMode(ENCODER_SW, INPUT_PULLUP);
-  pinMode(CURRENT_SENSE_PIN, INPUT);
-  pinMode(WIFI_TOGGLE, INPUT_PULLUP);
+  Serial.print("Device name: ");
+  Serial.println(deviceName);
 
   wifi_enabled = digitalRead(WIFI_TOGGLE) == LOW;
 
