@@ -244,7 +244,10 @@ void loop()
     }
     lastLedEnabled = ledEnabled;
 
-    publishState();
+    if (wifi_enabled)
+    {
+      publishState();
+    }
   }
 
   // Handle encoder input using getDirection()
@@ -321,7 +324,10 @@ void loop()
         Serial.println("Exiting brightness mode");
         inBrightnessMode = false;
 
-        publishState();
+        if (wifi_enabled)
+        {
+          publishState();
+        }
       }
       else
       {
@@ -331,7 +337,10 @@ void loop()
         Serial.print("Saved color to Preferences: ");
         Serial.println(currentColorIndex);
 
-        publishState();
+        if (wifi_enabled)
+        {
+          publishState();
+        }
       }
     }
   }
