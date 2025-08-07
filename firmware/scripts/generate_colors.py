@@ -1,12 +1,19 @@
 import csv
 import os
 
-csv_path = os.path.join("shared", "colors.csv")
-header_path = os.path.join("firmware", "include", "colors.h")
+# Paths related to project root
+input_file = "shared/colors.csv"
+output_file = "firmware/include/colors.h"
+
+csv_path = os.path.join(input_file)
+header_path = os.path.join(output_file)
 
 with open(csv_path, newline="") as csvfile:
     reader = csv.reader(csvfile)
     lines = []
+
+    # skip header
+    next(reader, None)
 
     for row in reader:
         r, g, b = map(int, row[:3])
