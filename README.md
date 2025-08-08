@@ -97,7 +97,6 @@ Once connected to WiFi:
 | 10k                     | 3        | Resistor                                   |
 | 1N4148TR                | 2        | Diode                                      |
 | Pin Header 2.54mm 3-pin | 1        | Jumper for Wi-Fi enable toggle             |
-| Pin Header 2.54mm 6-pin | 1        | UART programming/debug header              |
 | 15EDGRC-3.5-04P-14-00A  | 1        | 4-pin 5.0mm Pluggable terminal block       |
 | KF128-5.0-3P            | 2        | 3-pin 5.0mm Screw terminal block           |
 | 0PTF0078P               | 1        | PCB Glass fuse holder                      |
@@ -105,5 +104,6 @@ Once connected to WiFi:
 | MCP6002-I/P             | 1        | Dual op-amp                                |
 | TAS10-5-WEDT            | 1        | 5V AC-DC isolated power module (10W)       |
 | EC110201E2J-HA1-005     | 1        | EC11 rotary encoder with switch            |
+| UK-B0205-G5-B-250.      | 1        | Tactile Switch (WiFi Reset).               |
 | ZMCT103C                | 1        | Current transformer (AC sensing)           |
 | ESP32-C3 Super Mini     | 1        | Wi-Fi enabled MCU.                         |
