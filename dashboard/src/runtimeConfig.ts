@@ -16,7 +16,17 @@ declare global {
   }
 }
 
-export function getRuntimeConfig(): ResolvedConfig {
+function readConfigFromDom(): RawConfig {
+  const el = document.getElementById("app-config") as HTMLScriptElement | null;
+  if (!el) return {};
+  try {
+    return JSON.parse(el.textContent || "{}");
+  } catch {
+    return {};
+  }
+}
+
+export function getRuntimeConfig() {
   const isServer = typeof window === "undefined";
   if (isServer) {
     return {
@@ -25,7 +35,7 @@ export function getRuntimeConfig(): ResolvedConfig {
       MQTT_PASSWORD: process.env.MQTT_PASSWORD ?? "",
     };
   }
-  const cfg = window.__APP_CONFIG__ ?? {};
+  const cfg = (window.__APP_CONFIG__ as RawConfig) ?? readConfigFromDom();
   const dev = import.meta.env.DEV;
   return {
     MQTT_URL: cfg.MQTT_URL ?? (dev ? import.meta.env.VITE_MQTT_URL ?? "" : ""),

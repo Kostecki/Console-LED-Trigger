@@ -83,6 +83,8 @@ function RootDocument({ children }: Readonly<{ children: ReactNode }>) {
 	if (process.env.MQTT_USERNAME) cfg.MQTT_USERNAME = process.env.MQTT_USERNAME;
 	if (process.env.MQTT_PASSWORD) cfg.MQTT_PASSWORD = process.env.MQTT_PASSWORD;
 
+	const json = JSON.stringify(cfg);
+
 	return (
 		<html {...mantineHtmlProps}>
 			<head>
@@ -96,10 +98,11 @@ function RootDocument({ children }: Readonly<{ children: ReactNode }>) {
 						{children}
 					</Container>
 					<script
+						id="app-config"
+						type="application/json"
+						suppressHydrationWarning
 						// biome-ignore lint/security/noDangerouslySetInnerHtml: Inject runtime config
-						dangerouslySetInnerHTML={{
-							__html: `window.__APP_CONFIG__=${JSON.stringify(cfg)};`,
-						}}
+						dangerouslySetInnerHTML={{ __html: json }}
 					/>
 					<Scripts />
 				</MantineProvider>
