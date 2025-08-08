@@ -47,11 +47,13 @@ Wi-Fi and OTA functionality is **only initialized if a jumper is placed** across
 ### WiFi Setup
 
 - On first boot or if no WiFi is saved, the ESP32 starts an **Access Point** named `Console-LED-AP`.
-- Connect to that network from your phone/laptop.
+- Connect to that network (http://192.168.4.1) from your phone/laptop.
 - A captive portal will appear. Enter your WiFi credentials.
 - The ESP32 will save the SSID and password for future use.
 
 If connection fails, the device reboots and retries WiFi/AP setup.
+
+To change WiFi or MQTT credentials the WiFi Manager configuration can be reset via with tactile switch labeled "WIFI RESET" on the board. The device will reboot and broadcase its Access Point.
 
 ### Web Dashboard
 
@@ -64,6 +66,19 @@ If Wi-Fi is enabled, modules will appear in the web dashboard.
 - Change device display name
 
 The dashboard runs separately under `/dashboard`, built with TypeScript, TanStack, and Mantine.
+
+**Docker-compose-full-stack.yml**
+This compose-file spins up a full instance of the dashboard with a local MQTT broker.
+
+To do so run:
+`docker compose --env-file dashboard/.env -f docker-compose.fullstack.yml up -d` in the root of the project.
+
+**Docker-compose.yml**
+This compose-file exposes the dashboard and requires and external MQTT broker.
+
+To do so run: `docker compose --env-file dashboard/.env -f up` in the root of the project.
+
+Both compose-files requires a `.env` file to be present in /dashboard. See `/dashboard/.env.sample` for more information.
 
 ### OTA Updates
 
