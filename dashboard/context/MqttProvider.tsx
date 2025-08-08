@@ -7,6 +7,7 @@ import {
 	useRef,
 	useState,
 } from "react";
+import { getRuntimeConfig } from "src/runtimeConfig";
 
 export const MqttContext = createContext<MqttClient | null>(null);
 
@@ -14,12 +15,9 @@ export const MqttProvider = ({ children }: { children: ReactNode }) => {
 	const [client, setClient] = useState<MqttClient | null>(null);
 	const clientRef = useRef<MqttClient | null>(null);
 
-	const MQTT_URL = import.meta.env.VITE_MQTT_URL;
-	const MQTT_USERNAME = import.meta.env.VITE_MQTT_USERNAME;
-	const MQTT_PASSWORD = import.meta.env.VITE_MQTT_PASSWORD; // This isn't actually very secure, but it's fine for lan only 🤷‍♂️
+	const { MQTT_URL, MQTT_USERNAME, MQTT_PASSWORD } = getRuntimeConfig();
 
-	console.log("MQTT URL: ", MQTT_URL);
-
+	// biome-ignore lint/correctness/useExhaustiveDependencies: <No need for runtime reactivity>
 	useEffect(() => {
 		if (clientRef.current) {
 			return;
@@ -35,8 +33,7 @@ export const MqttProvider = ({ children }: { children: ReactNode }) => {
 		clientRef.current = mqttClient;
 
 		const handleConnect = () => {
-			console.log("MQTT client connected");
-			console.log("URL: ", MQTT_URL);
+			console.log("MQTT Client Connected:", MQTT_URL);
 			setClient(mqttClient);
 		};
 

@@ -14,7 +14,6 @@ import {
 	Outlet,
 	Scripts,
 } from "@tanstack/react-router";
-import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
 import type { ReactNode } from "react";
 
 import "@mantine/core/styles.css";
@@ -79,6 +78,11 @@ function RootComponent() {
 }
 
 function RootDocument({ children }: Readonly<{ children: ReactNode }>) {
+	const cfg: Record<string, string> = {};
+	if (process.env.MQTT_URL) cfg.MQTT_URL = process.env.MQTT_URL;
+	if (process.env.MQTT_USERNAME) cfg.MQTT_USERNAME = process.env.MQTT_USERNAME;
+	if (process.env.MQTT_PASSWORD) cfg.MQTT_PASSWORD = process.env.MQTT_PASSWORD;
+
 	return (
 		<html {...mantineHtmlProps}>
 			<head>
@@ -91,8 +95,12 @@ function RootDocument({ children }: Readonly<{ children: ReactNode }>) {
 					<Container mt="xl" size="xs">
 						{children}
 					</Container>
-
-					<TanStackRouterDevtools position="bottom-right" />
+					<script
+						// biome-ignore lint/security/noDangerouslySetInnerHtml: Inject runtime config
+						dangerouslySetInnerHTML={{
+							__html: `window.__APP_CONFIG__=${JSON.stringify(cfg)};`,
+						}}
+					/>
 					<Scripts />
 				</MantineProvider>
 			</body>

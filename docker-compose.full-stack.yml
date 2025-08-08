@@ -1,15 +1,4 @@
 services:
-  dashboard:
-    extends:
-      file: docker-compose.yml
-      service: dashboard
-    ports:
-      - 3000:3000
-    environment:
-      - MQTT_URL=${VITE_MQTT_URL}
-      - MQTT_USER=${VITE_MQTT_USERNAME}
-      - MQTT_PASSWORD=${VITE_MQTT_PASSWORD}
-
   mqtt:
     image: eclipse-mosquitto:latest
     restart: unless-stopped
@@ -20,8 +9,8 @@ services:
       - ./conf/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
       - mosquitto_data:/mosquitto
     environment:
-      - MQTT_USER=${VITE_MQTT_USERNAME}
-      - MQTT_PASSWORD=${VITE_MQTT_PASSWORD}
+      - MQTT_USER=${MQTT_USERNAME}
+      - MQTT_PASSWORD=${MQTT_PASSWORD}
     command: >
       sh -c "
         set -e
@@ -41,6 +30,20 @@ services:
         fi
         exec su -s /bin/sh -c 'exec mosquitto -c /mosquitto/config/mosquitto.conf' mosquitto
       "
+  
+  dashboard:
+    extends:
+      file: docker-compose.yml
+      service: dashboard
+    restart: unless-stopped
+    ports:
+      - 3000:3000
+    environment:
+      MQTT_URL: ${MQTT_URL}
+      MQTT_USERNAME: ${MQTT_USERNAME}
+      MQTT_PASSWORD: ${MQTT_PASSWORD}
+    depends_on:
+      - mqtt
 
 volumes:
   mosquitto_data:
