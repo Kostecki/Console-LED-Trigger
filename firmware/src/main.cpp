@@ -2,11 +2,15 @@
 #include <ArduinoOTA.h>
 #include <RotaryEncoder.h>
 #include <Adafruit_NeoPixel.h>
+#include <WiFiManager.h>
+#include <time.h>
 
-#include <wifi_setup.h>
+#include <state.h>
+#include <wifi_mqtt_ota_setup.h>
 #include <pins.h>
 #include <colors.h>
 #include <config.h>
+#include <utils.h>
 
 // Preferences setup
 Preferences prefs;
@@ -18,20 +22,41 @@ bool inBrightnessMode = false;
 
 // Encoder Setup
 RotaryEncoder encoder(ENCODER_A, ENCODER_B, RotaryEncoder::LatchMode::FOUR3);
+
+// Color management
+ColorMode colorMode = ColorMode::Palette;
 uint8_t currentColorIndex = 0;
+uint32_t customColor = 0x000000;
+
+// Current brightness
 uint8_t currentBrightness = 128;
 
+String deviceName = "";
 unsigned long powerOffTime = 0;
-
 bool wifi_enabled = false;
+time_t bootTime = 0;
+
+static bool wasResetButtonPressed = false;
 
 void updateLED(bool force)
 {
-  uint32_t color = ledEnabled || force ? colors[currentColorIndex] : 0;
+  uint32_t color = 0;
+  if (ledEnabled || force)
+  {
+    if (colorMode == ColorMode::Palette && currentColorIndex < NUM_COLORS)
+    {
+      color = colors[currentColorIndex];
+    }
+    else
+    {
+      color = customColor;
+    }
+  }
   for (int i = 0; i < NUM_PIXELS; ++i)
   {
     strip.setPixelColor(i, color);
   }
+
   strip.show();
 }
 
@@ -40,7 +65,8 @@ uint8_t lerpColorComponent(uint8_t from, uint8_t to, uint8_t step, uint8_t maxSt
   return from + ((to - from) * step) / maxStep;
 }
 
-void fadeToColor(uint32_t targetColor, uint8_t steps = 50, uint16_t delayMs = 25)
+// Function definition without default arguments
+void fadeToColor(uint32_t targetColor, uint8_t steps, uint16_t delayMs)
 {
   uint32_t startColor = strip.getPixelColor(0);
 
@@ -61,31 +87,48 @@ void fadeToColor(uint32_t targetColor, uint8_t steps = 50, uint16_t delayMs = 25
 
 void setup()
 {
-  // Initialize Serial for debugging
-  Serial1.begin(115200);
-  delay(1000);
-  Serial1.println("Console LED Trigger starting...");
 
-  // Initialize Preferences
-  prefs.begin("led-config", false);
+  // Initialize Serial for debugging
+  Serial.begin(115200);
+  delay(1000);
+  Serial.println();
+  Serial.println("Console LED Trigger starting");
 
   // Initialize Pins
   pinMode(ENCODER_SW, INPUT_PULLUP);
   pinMode(CURRENT_SENSE_PIN, INPUT);
   pinMode(WIFI_TOGGLE, INPUT_PULLUP);
+  pinMode(WIFI_RESET, INPUT_PULLUP);
+
+  // Initialize Preferences
+  prefs.begin("led-config", false);
+
+  // Handle device name
+  deviceName = prefs.getString("name", "");
+  if (deviceName.isEmpty())
+  {
+    deviceName = "Console-" + getMacSuffix();
+    prefs.putString("name", deviceName);
+  }
+  Serial.print("Device name: ");
+  Serial.println(deviceName);
 
   wifi_enabled = digitalRead(WIFI_TOGGLE) == LOW;
 
   // Setup WiFi and OTA
   if (wifi_enabled)
   {
-    Serial1.println("WiFi enabled, setting up WiFi and OTA...");
-    initWiFiAndOTA(prefs);
+    Serial.println();
+    Serial.println("WiFi Enabled: Setting up WiFi, MQTT, and OTA");
+    initWiFiAndMQTTAndOTA(prefs);
   }
   else
   {
-    Serial1.println("WiFi not enabled, skipping WiFi setup");
+    Serial.println("WiFi Disabled: Skipping WiFi, MQTT and OTA setup");
   }
+
+  bootTime = getSyncedUnixTime();
+  Serial.printf("Boot time set: %lu\n", bootTime);
 
   attachInterrupt(digitalPinToInterrupt(ENCODER_A), []
                   { encoder.tick(); }, CHANGE);
@@ -93,12 +136,29 @@ void setup()
                   { encoder.tick(); }, CHANGE);
 
   // Read saved color index from Preferences
-  currentColorIndex = prefs.getUChar("color", 0);
-  Serial1.println(currentColorIndex);
+  colorMode = static_cast<ColorMode>(prefs.getUChar("color_mode", 0));
+  currentColorIndex = prefs.getUChar("color_index", 0);
+  String hex = prefs.getString("custom_color", "000000");
+  customColor = (uint32_t)strtoul(hex.c_str(), nullptr, 16);
+  Serial.println();
+  Serial.print("Color mode: ");
+  Serial.println(colorModeToString(colorMode));
+  if (colorMode == ColorMode::Custom)
+  {
+    Serial.print("Custom color: #");
+    Serial.println(String(customColor, HEX));
+  }
+  else
+  {
+    Serial.print("Current color index: ");
+    Serial.println(currentColorIndex);
+  }
 
   // Read saved brightness from Preferences
   currentBrightness = prefs.getUChar("brightness", 128);
-  Serial1.println(currentBrightness);
+  Serial.print("Current brightness: ");
+  Serial.println(currentBrightness);
+  Serial.println();
 
   strip.begin();
   strip.setBrightness(currentBrightness);
@@ -114,8 +174,36 @@ void setup()
 
 void loop()
 {
+  // Handle WiFi reset button
+  bool resetBtnPressed = digitalRead(WIFI_RESET) == LOW;
+  if (resetBtnPressed && !wasResetButtonPressed)
+  {
+    delay(50);
+    if (digitalRead(WIFI_RESET) == LOW)
+    {
+      Serial.println();
+      Serial.print("Reset button pressed:");
+      if (wifi_enabled)
+      {
+        Serial.println(" Resetting WiFi and MQTT settings");
+        WiFiManager wifiManager;
+        wifiManager.resetSettings();
+        Serial.println("WiFi and MQTT settings reset. Restarting");
+      }
+      else
+      {
+        Serial.println(" Restarting without resetting WiFi and MQTT settings");
+      }
+      Serial.println();
+
+      ESP.restart();
+    }
+  }
+  wasResetButtonPressed = resetBtnPressed;
+
   if (wifi_enabled)
   {
+    handleMqttLoop();
     ArduinoOTA.handle();
   }
 
@@ -141,16 +229,25 @@ void loop()
 
   if (ledEnabled != lastLedEnabled)
   {
-    Serial1.println(ledEnabled ? "Turning ON LEDs" : "Turning OFF LEDs");
+    Serial.println(ledEnabled ? "Turning ON LEDs" : "Turning OFF LEDs");
     if (ledEnabled)
     {
-      fadeToColor(colors[currentColorIndex]);
+      uint32_t fadeTarget = (colorMode == ColorMode::Palette && currentColorIndex < NUM_COLORS)
+                                ? colors[currentColorIndex]
+                                : customColor;
+
+      fadeToColor(fadeTarget);
     }
     else
     {
       fadeToColor(strip.Color(0, 0, 0));
     }
     lastLedEnabled = ledEnabled;
+
+    if (wifi_enabled)
+    {
+      publishState();
+    }
   }
 
   // Handle encoder input using getDirection()
@@ -171,7 +268,10 @@ void loop()
     }
     else
     {
+      colorMode = ColorMode::Palette;
       currentColorIndex = (currentColorIndex + delta + NUM_COLORS) % NUM_COLORS;
+      prefs.putUChar("color_mode", static_cast<uint8_t>(colorMode));
+      prefs.putUChar("color_index", currentColorIndex);
       updateLED(false);
     }
   }
@@ -212,23 +312,35 @@ void loop()
     if (pressDuration >= LONG_PRESS_THRESHOLD)
     {
       inBrightnessMode = !inBrightnessMode;
-      Serial1.println(inBrightnessMode ? "Entered brightness mode" : "Exited brightness mode");
+      Serial.println(inBrightnessMode ? "Entered brightness mode" : "Exited brightness mode");
     }
     else
     {
       if (inBrightnessMode)
       {
         prefs.putUChar("brightness", currentBrightness);
-        Serial1.print("Saved brightness: ");
-        Serial1.println(currentBrightness);
-        Serial1.println("Exiting brightness mode");
+        Serial.print("Saved brightness: ");
+        Serial.println(currentBrightness);
+        Serial.println("Exiting brightness mode");
         inBrightnessMode = false;
+
+        if (wifi_enabled)
+        {
+          publishState();
+        }
       }
       else
       {
-        prefs.putUChar("color", currentColorIndex);
-        Serial1.print("Saved color to Preferences: ");
-        Serial1.println(currentColorIndex);
+        colorMode = ColorMode::Palette;
+        prefs.putUChar("color_mode", static_cast<uint8_t>(colorMode));
+        prefs.putUChar("color_index", currentColorIndex);
+        Serial.print("Saved color to Preferences: ");
+        Serial.println(currentColorIndex);
+
+        if (wifi_enabled)
+        {
+          publishState();
+        }
       }
     }
   }

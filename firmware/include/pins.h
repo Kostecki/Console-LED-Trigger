@@ -8,4 +8,5 @@ constexpr uint8_t ENCODER_A = 5;
 constexpr uint8_t ENCODER_B = 6;
 constexpr uint8_t ENCODER_SW = 7;
 
-constexpr uint8_t WIFI_TOGGLE = 13;
+constexpr uint8_t WIFI_TOGGLE = 9;
+constexpr uint8_t WIFI_RESET = 10;
