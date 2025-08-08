@@ -11,12 +11,15 @@ const defaultLedState = {
   bootTime: Date.now() / 1000,
 };
 
-export function useBoards(): Board[] {
+export function useBoards(): { boards: Board[]; ready: boolean } {
   const client = useContext(MqttContext);
   const [boards, setBoards] = useState<Record<string, Board>>({});
+  const [ready, setReady] = useState(false);
 
   useEffect(() => {
     if (!client) return;
+
+    let gotMessage = false;
 
     const mergeBoard = (id: string, partial: Partial<Board>) => {
       setBoards((prev) => {
@@ -90,18 +93,30 @@ export function useBoards(): Board[] {
       } else if (topic.match(/^console\/[^/]+\/state$/)) {
         updateState(topic, payload);
       }
+
+      gotMessage = true;
+      setReady(true);
     };
 
     client.subscribe("console/+/status", { qos: 1 });
     client.subscribe("console/+/state", { qos: 1 });
     client.on("message", handler);
 
+    // Fallback: mark ready even if we got nothing after a short delay
+    const t = setTimeout(() => {
+      if (!gotMessage) setReady(true);
+    }, 500);
+
     return () => {
+      clearTimeout(t);
       client.unsubscribe("console/+/status");
       client.unsubscribe("console/+/state");
       client.off("message", handler);
     };
   }, [client]);
 
-  return Object.values(boards).sort((a, b) => a.id.localeCompare(b.id));
+  return {
+    boards: Object.values(boards).sort((a, b) => a.id.localeCompare(b.id)),
+    ready,
+  };
 }
