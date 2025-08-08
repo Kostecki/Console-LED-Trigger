@@ -124,9 +124,9 @@ void publishState()
   doc["brightness"] = currentBrightness;
   doc["bootTime"] = bootTime;
   doc["name"] = deviceName;
-
   doc["colorMode"] = (colorMode == ColorMode::Palette) ? "palette" : "custom";
   doc["colorIndex"] = currentColorIndex;
+
   char hexColor[8];
   snprintf(hexColor, sizeof(hexColor), "%06X", customColor);
   doc["customColor"] = String("#") + hexColor;
