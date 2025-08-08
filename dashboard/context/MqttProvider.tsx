@@ -18,6 +18,8 @@ export const MqttProvider = ({ children }: { children: ReactNode }) => {
 	const MQTT_USERNAME = import.meta.env.VITE_MQTT_USERNAME;
 	const MQTT_PASSWORD = import.meta.env.VITE_MQTT_PASSWORD; // This isn't actually very secure, but it's fine for lan only 🤷‍♂️
 
+	console.log("MQTT URL: ", MQTT_URL);
+
 	useEffect(() => {
 		if (clientRef.current) {
 			return;
