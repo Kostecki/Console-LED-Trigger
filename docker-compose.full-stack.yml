@@ -1,0 +1,46 @@
+services:
+  dashboard:
+    extends:
+      file: docker-compose.yml
+      service: dashboard
+    ports:
+      - 3000:3000
+    environment:
+      - MQTT_URL=${VITE_MQTT_URL}
+      - MQTT_USER=${VITE_MQTT_USERNAME}
+      - MQTT_PASSWORD=${VITE_MQTT_PASSWORD}
+
+  mqtt:
+    image: eclipse-mosquitto:latest
+    restart: unless-stopped
+    ports:
+      - "1883:1883"
+      - "9001:9001"
+    volumes:
+      - ./conf/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+      - mosquitto_data:/mosquitto
+    environment:
+      - MQTT_USER=${VITE_MQTT_USERNAME}
+      - MQTT_PASSWORD=${VITE_MQTT_PASSWORD}
+    command: >
+      sh -c "
+        set -e
+        if [ -z \"$$MQTT_USER\" ] || [ -z \"$$MQTT_PASSWORD\" ]; then
+          echo 'ERROR: MQTT_USER and MQTT_PASSWORD must be set via .env' >&2
+          exit 1
+        fi
+        mkdir -p /mosquitto/data
+        if [ ! -f /mosquitto/data/passwordfile ]; then
+          echo 'Creating Mosquitto password file...'
+          mosquitto_passwd -b -c /mosquitto/data/passwordfile $$MQTT_USER $$MQTT_PASSWORD
+          chown -R mosquitto:mosquitto /mosquitto/data || true
+          chmod 640 /mosquitto/data/passwordfile || true
+        else
+          echo 'Password file already exists, skipping creation.'
+          chown -R mosquitto:mosquitto /mosquitto/data || true
+        fi
+        exec su -s /bin/sh -c 'exec mosquitto -c /mosquitto/config/mosquitto.conf' mosquitto
+      "
+
+volumes:
+  mosquitto_data:

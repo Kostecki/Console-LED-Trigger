@@ -19,7 +19,7 @@ export const MqttProvider = ({ children }: { children: ReactNode }) => {
 			return;
 		}
 
-		const mqttClient = mqtt.connect("ws://mqtt.lan:9001", {
+		const mqttClient = mqtt.connect(import.meta.env.VITE_MQTT_URL, {
 			clientId: `dashboard-${Math.random().toString(16).slice(2)}`,
 			username: import.meta.env.VITE_MQTT_USERNAME,
 			password: import.meta.env.VITE_MQTT_PASSWORD, // This isn't actually very secure, but it's fine for lan only 🤷‍♂️

@@ -6,3 +6,6 @@ services:
     restart: unless-stopped
     environment:
       NODE_ENV: production
+      MQTT_URL: ${VITE_MQTT_URL}
+      MQTT_USERNAME: ${VITE_MQTT_USERNAME}
+      MQTT_PASSWORD: ${VITE_MQTT_PASSWORD}
