@@ -1,9 +1,5 @@
 #pragma once
 
-// EEPROM Config
-#define EEPROM_ADDR_COLOR 0
-#define EEPROM_ADDR_BRIGHTNESS 1
-
 // LED Config
 constexpr uint8_t NUM_PIXELS = 15;
 

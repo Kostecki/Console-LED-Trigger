@@ -1,0 +1,11 @@
+services:
+  dashboard:
+    image: ghcr.io/kostecki/console-led-trigger/dashboard:latest
+    ports:
+      - "3000:3000"
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      MQTT_URL: ${VITE_MQTT_URL}
+      MQTT_USERNAME: ${VITE_MQTT_USERNAME}
+      MQTT_PASSWORD: ${VITE_MQTT_PASSWORD}
