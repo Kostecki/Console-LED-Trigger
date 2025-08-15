@@ -11,6 +11,7 @@
 #include <colors.h>
 #include <config.h>
 #include <utils.h>
+#include <serial_mux.h>
 
 // Preferences setup
 Preferences prefs;
@@ -88,8 +89,8 @@ void fadeToColor(uint32_t targetColor, uint8_t steps, uint16_t delayMs)
 void setup()
 {
 
-  // Initialize Serial for debugging
-  Serial.begin(115200);
+  // Initialize Serial
+  SerialBegin(115200);
   delay(1000);
   Serial.println();
   Serial.println("Console LED Trigger starting");
@@ -208,6 +209,9 @@ void loop()
   }
 
   int adc = analogRead(CURRENT_SENSE_PIN);
+
+  // Serial.printf("ADC Value: %d\n", adc, " > ", CURRENT_THRESHOLD_ON);
+  // delay(500);
 
   static bool lastLedEnabled = false;
 

@@ -1,6 +1,7 @@
 #include <Arduino.h>
 
 #include <state.h>
+#include <serial_mux.h>
 
 String getMacSuffix()
 {

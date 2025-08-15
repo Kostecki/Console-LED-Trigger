@@ -10,6 +10,7 @@
 
 #include <state.h>
 #include <utils.h>
+#include <serial_mux.h>
 
 WiFiClient espClient;
 PubSubClient mqttClient(espClient);
