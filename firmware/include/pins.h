@@ -1,12 +1,19 @@
 #pragma once
 
-constexpr uint8_t CURRENT_SENSE_PIN = 1;
+// Current Sensing
+constexpr uint8_t CURRENT_SENSE_PIN = 0;
+constexpr uint8_t POWER_CALIBRATE_PIN = 1;
 
-constexpr uint8_t LED_PIN = 4;
+// LED
+constexpr uint8_t LED_PIN = 3;
 
-constexpr uint8_t ENCODER_A = 5;
-constexpr uint8_t ENCODER_B = 6;
-constexpr uint8_t ENCODER_SW = 7;
+// Encoder
+constexpr uint8_t ENCODER_A = 4;
+constexpr uint8_t ENCODER_B = 5;
+constexpr uint8_t ENCODER_SW = 6;
 
-constexpr uint8_t WIFI_TOGGLE = 9;
+// WiFi
+constexpr uint8_t WIFI_TOGGLE = 7;
 constexpr uint8_t WIFI_RESET = 10;
+
+// UART on GPIO20 and GPIO21
