@@ -5,7 +5,7 @@ constexpr uint8_t NUM_PIXELS = 15;
 
 // Current Sense Config
 const int CURRENT_THRESHOLD = 1600;
-const int CURRENT_THRESHOLD_OFFSET = 15;
+const int CURRENT_THRESHOLD_OFFSET = 100;
 
 // Encoder Config
 constexpr int ENCODER_STEPS_PER_CLICK = 4;
