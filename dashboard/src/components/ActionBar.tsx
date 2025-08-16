@@ -104,7 +104,13 @@ export function ActionBar({ board, ...props }: InputProps) {
 	};
 
 	return (
-		<Flex justify="space-between" {...props}>
+		<Flex
+			justify="space-between"
+			{...props}
+			style={{
+				pointerEvents: board.status === 0 ? "none" : "auto",
+			}}
+		>
 			<ChangeNameModal id={board.id} name={board.name} />
 
 			<Tooltip label="Flash LEDs">
