@@ -11,6 +11,8 @@
 #include <state.h>
 #include <utils.h>
 #include <serial_mux.h>
+#include <pins.h>
+#include <config.h>
 
 WiFiClient espClient;
 PubSubClient mqttClient(espClient);
@@ -162,7 +164,8 @@ void connectToMqtt()
     mqttClient.subscribe((prefix + "/set").c_str());
     mqttClient.subscribe((prefix + "/identify").c_str());
     mqttClient.subscribe((prefix + "/reboot").c_str());
-    mqttClient.subscribe((prefix + "/update").c_str());
+    mqttClient.subscribe((prefix + "/fw-update").c_str());
+    mqttClient.subscribe((prefix + "/calibrate").c_str());
 
     mqttClient.publish((prefix + "/status").c_str(), (uint8_t *)"1", 1, true);
     publishState();
@@ -261,12 +264,12 @@ void performOTAUpdate(const String &url)
 
 void mqttCallback(char *topic, byte *payload, unsigned int length)
 {
-  payload[length] = '\0'; // Null-terminate
   String topicStr = String(topic);
-  Serial.printf("MQTT message on topic %s: %s\n", topic, (char *)payload);
+  String msg((const char *)payload, length);
+  Serial.printf("MQTT message on topic %s: %s\n", topic, msg.c_str());
 
   JsonDocument doc;
-  deserializeJson(doc, (char *)payload);
+  deserializeJson(doc, msg);
 
   if (topicStr.endsWith("/set"))
   {
@@ -330,6 +333,16 @@ void mqttCallback(char *topic, byte *payload, unsigned int length)
       publishState();
     }
   }
+  else if (topicStr.endsWith("/fw-update"))
+  {
+    Serial.println("Received firmware update command");
+
+    if (doc["url"].is<const char *>())
+    {
+      Serial.printf("Firmware update URL: %s\n", doc["url"].as<String>().c_str());
+      performOTAUpdate(doc["url"].as<String>());
+    }
+  }
   else if (topicStr.endsWith("/identify"))
   {
     Serial.println("Received identify command");
@@ -353,14 +366,22 @@ void mqttCallback(char *topic, byte *payload, unsigned int length)
     delay(500);
     ESP.restart();
   }
-  else if (topicStr.endsWith("/fw-update"))
+  else if (topicStr.endsWith("/calibrate"))
   {
-    Serial.println("Received firmware update command");
+    Serial.println("Received calibration command");
 
-    if (doc["url"].is<const char *>())
-    {
-      Serial.printf("Firmware update URL: %s\n", doc["url"].as<String>().c_str());
-      performOTAUpdate(doc["url"].as<String>());
-    }
+    int baseline = readAdcAverage(CURRENT_SENSE_PIN, 64);
+    currentThreshold = baseline;
+    prefs.putInt("current_threshold", currentThreshold);
+
+    const int TH_ON = currentThreshold + CURRENT_THRESHOLD_OFFSET;
+    const int TH_OFF = currentThreshold - CURRENT_THRESHOLD_OFFSET;
+    Serial.printf("Calibrated baseline: %d  TH_ON: %d  TH_OFF: %d\n", currentThreshold, TH_ON, TH_OFF);
+
+    blinkConfirm(strip.Color(255, 255, 255), 2);
+  }
+  else
+  {
+    Serial.printf("Unknown topic: %s\n", topicStr.c_str());
   }
 }

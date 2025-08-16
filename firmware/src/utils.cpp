@@ -1,5 +1,6 @@
 #include <Arduino.h>
 
+#include <utils.h>
 #include <state.h>
 #include <serial_mux.h>
 
@@ -11,7 +12,7 @@ String getMacSuffix()
   return String(suffix);
 }
 
-time_t getSyncedUnixTime(uint32_t timeoutMs = 5000)
+time_t getSyncedUnixTime(uint32_t timeoutMs)
 {
   struct tm timeinfo;
   if (getLocalTime(&timeinfo, timeoutMs))
@@ -26,6 +27,20 @@ time_t getSyncedUnixTime(uint32_t timeoutMs = 5000)
   }
 }
 
+// Read ADC average over multiple samples
+int readAdcAverage(uint8_t pin, int samples)
+{
+  long sum = 0;
+  for (int i = 0; i < samples; ++i)
+  {
+    sum += analogRead(pin);
+    delayMicroseconds(1000);
+  }
+
+  return (int)(sum / samples);
+}
+
+// Convert color mode enum to string
 const char *colorModeToString(ColorMode mode)
 {
   switch (mode)
@@ -37,4 +52,10 @@ const char *colorModeToString(ColorMode mode)
   default:
     return "Unknown";
   }
+}
+
+// Linearly interpolate between two color components
+uint8_t lerpColorComponent(uint8_t from, uint8_t to, uint8_t step, uint8_t maxStep)
+{
+  return from + ((to - from) * step) / maxStep;
 }

@@ -38,53 +38,10 @@ bool wifi_enabled = false;
 time_t bootTime = 0;
 
 static bool wasResetButtonPressed = false;
+static bool wasCalButtonPressed = false;
 
-void updateLED(bool force)
-{
-  uint32_t color = 0;
-  if (ledEnabled || force)
-  {
-    if (colorMode == ColorMode::Palette && currentColorIndex < NUM_COLORS)
-    {
-      color = colors[currentColorIndex];
-    }
-    else
-    {
-      color = customColor;
-    }
-  }
-  for (int i = 0; i < NUM_PIXELS; ++i)
-  {
-    strip.setPixelColor(i, color);
-  }
-
-  strip.show();
-}
-
-uint8_t lerpColorComponent(uint8_t from, uint8_t to, uint8_t step, uint8_t maxStep)
-{
-  return from + ((to - from) * step) / maxStep;
-}
-
-// Function definition without default arguments
-void fadeToColor(uint32_t targetColor, uint8_t steps, uint16_t delayMs)
-{
-  uint32_t startColor = strip.getPixelColor(0);
-
-  for (int i = 0; i <= steps; ++i)
-  {
-    uint32_t interp = strip.Color(
-        lerpColorComponent((startColor >> 16) & 0xFF, (targetColor >> 16) & 0xFF, i, steps),
-        lerpColorComponent((startColor >> 8) & 0xFF, (targetColor >> 8) & 0xFF, i, steps),
-        lerpColorComponent(startColor & 0xFF, targetColor & 0xFF, i, steps));
-    for (int j = 0; j < NUM_PIXELS; ++j)
-    {
-      strip.setPixelColor(j, interp);
-    }
-    strip.show();
-    delay(delayMs);
-  }
-}
+// Runtime current threshold (loaded from NVS. Fallback to config default)
+int currentThreshold = CURRENT_THRESHOLD;
 
 void setup()
 {
@@ -98,11 +55,17 @@ void setup()
   // Initialize Pins
   pinMode(ENCODER_SW, INPUT_PULLUP);
   pinMode(CURRENT_SENSE_PIN, INPUT);
+  pinMode(POWER_CALIBRATE_PIN, INPUT_PULLUP);
   pinMode(WIFI_TOGGLE, INPUT_PULLUP);
   pinMode(WIFI_RESET, INPUT_PULLUP);
 
   // Initialize Preferences
   prefs.begin("led-config", false);
+
+  // Load calibrated threshold if available
+  currentThreshold = prefs.getInt("current_threshold", CURRENT_THRESHOLD);
+  Serial.print("Current threshold: ");
+  Serial.println(currentThreshold);
 
   // Handle device name
   deviceName = prefs.getString("name", "");
@@ -202,6 +165,32 @@ void loop()
   }
   wasResetButtonPressed = resetBtnPressed;
 
+  // Single-press calibration on POWER_CALIBRATE-PIN
+  bool calPressed = (digitalRead(POWER_CALIBRATE_PIN) == LOW);
+  if (calPressed && !wasCalButtonPressed)
+  {
+    delay(50);
+    if (digitalRead(POWER_CALIBRATE_PIN) == LOW)
+    {
+      Serial.println();
+      Serial.println("Calibration button pressed. Sampling ADC");
+
+      int baseline = readAdcAverage(CURRENT_SENSE_PIN, 64);
+      currentThreshold = baseline;
+      prefs.putInt("current_threshold", currentThreshold);
+      Serial.print("Calibrated baseline saved: ");
+      Serial.println(currentThreshold);
+      Serial.print("TH_ON / TH_OFF: ");
+      Serial.print(currentThreshold + CURRENT_THRESHOLD_OFFSET);
+      Serial.print(" / ");
+      Serial.println(currentThreshold - CURRENT_THRESHOLD_OFFSET);
+      Serial.println();
+
+      blinkConfirm(strip.Color(255, 255, 255), 2);
+    }
+  }
+  wasCalButtonPressed = calPressed;
+
   if (wifi_enabled)
   {
     handleMqttLoop();
@@ -215,18 +204,22 @@ void loop()
 
   static bool lastLedEnabled = false;
 
-  if (!ledEnabled && adc > CURRENT_THRESHOLD_ON)
+  // Use runtime threshold derived from calibrated baseline + fixed offset
+  const int TH_ON = currentThreshold + CURRENT_THRESHOLD_OFFSET;
+  const int TH_OFF = currentThreshold - CURRENT_THRESHOLD_OFFSET;
+
+  if (!ledEnabled && adc > TH_ON)
   {
     ledEnabled = true;
   }
-  else if (ledEnabled && adc < CURRENT_THRESHOLD_OFF)
+  else if (ledEnabled && adc < TH_OFF)
   {
     if (powerOffTime == 0)
       powerOffTime = millis();
     if (millis() - powerOffTime >= POWER_OFF_DELAY)
       ledEnabled = false;
   }
-  else if (adc > CURRENT_THRESHOLD_OFF)
+  else if (adc > TH_OFF)
   {
     powerOffTime = 0;
   }
@@ -296,16 +289,7 @@ void loop()
   // Show when brightness mode has been activated and button can be released
   if (buttonPressed && !feedbackShown && millis() - pressStartTime >= LONG_PRESS_THRESHOLD)
   {
-    uint8_t previousBrightness = currentBrightness;
-
-    strip.setBrightness(128);
-    uint32_t originalColor = colors[currentColorIndex];
-    fadeToColor(strip.Color(255, 255, 255), 10, 10);
-    delay(100);
-    fadeToColor(originalColor, 10, 10);
-    strip.setBrightness(previousBrightness);
-
-    updateLED(false);
+    blinkConfirm(strip.Color(255, 255, 255), 2);
     feedbackShown = true;
   }
 
