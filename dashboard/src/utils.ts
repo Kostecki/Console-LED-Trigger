@@ -14,6 +14,7 @@ const rgbToHex = (r: number, g: number, b: number): string => {
 const rawSwatches = csvData
   .trim()
   .split("\n")
+  .slice(1) // Skip header row
   .map((line) => line.split(",").map(Number));
 export const swatches = rawSwatches.map(([r, g, b]) => rgbToHex(r, g, b));
 
