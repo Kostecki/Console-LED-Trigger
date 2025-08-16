@@ -1,4 +1,6 @@
+import { notifications } from "@mantine/notifications";
 import csvData from "@shared/colors.csv?raw";
+import type { ReactNode } from "react";
 import type { Board } from "types/board";
 
 const rgbToHex = (r: number, g: number, b: number): string => {
@@ -47,4 +49,22 @@ export const displayColor = (board: Board): string => {
   // TODO: Maybe do something with "white"?
 
   return "#000000"; // Default fallback color
+};
+
+const showNotification = (title: string, message: ReactNode, color: string) => {
+  notifications.show({
+    title,
+    message,
+    color,
+    withBorder: true,
+    withCloseButton: false,
+  });
+};
+
+export const showSuccessNotification = (message: ReactNode) => {
+  showNotification("Success", message, "green");
+};
+export const showErrorNotification = (message: ReactNode, error: string) => {
+  showNotification("Error", message, "red");
+  console.error(`${message}: ${error}`);
 };

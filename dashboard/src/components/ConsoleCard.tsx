@@ -100,11 +100,11 @@ export function ConsoleCard({ board }: { board: Board }) {
 						<AccordionLabel board={board} />
 					</Accordion.Control>
 					<Accordion.Panel style={{ borderTop: slightBorder }}>
+						<ActionBar board={board} mt={5} mb="sm" />
+						<Divider color={slightBorderColor} />
 						<SimpleGrid cols={{ base: 1, sm: 2 }} pt="xs">
 							<CardSection inheritPadding>
 								<SimpleGrid cols={1} spacing={0} h="100%">
-									<ActionBar board={board} />
-									<Divider my="xs" color={slightBorderColor} />
 									<SimpleGrid cols={2} spacing="sm">
 										<StatusSquare
 											icon={<IconWifi size={35} opacity={0.75} />}
@@ -121,6 +121,7 @@ export function ConsoleCard({ board }: { board: Board }) {
 											label="Color"
 											value={boardColor.toUpperCase()}
 											color={boardColor}
+											fw="500"
 										/>
 										<StatusSquare
 											icon={<IconLamp size={30} opacity={0.75} />}

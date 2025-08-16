@@ -1,19 +1,24 @@
 import {
-	ActionIcon,
+	type BoxProps,
+	Button,
 	FileButton,
 	Flex,
-	Group,
 	Text,
 	Tooltip,
 } from "@mantine/core";
-import { notifications } from "@mantine/notifications";
-import { IconFileUpload, IconRotate, IconSearch } from "@tabler/icons-react";
+import { IconBolt, IconFileUpload, IconSearch } from "@tabler/icons-react";
 import { useBoardActions } from "hooks/useBoardActions";
+import { showErrorNotification, showSuccessNotification } from "src/utils";
 import type { Board } from "../../types/board";
 import { ChangeNameModal } from "./ChangeNameModal";
 
-export function ActionBar({ board }: { board: Board }) {
-	const { identifyBoard, sendFirmwareUpdate, rebootBoard } = useBoardActions();
+type InputProps = {
+	board: Board;
+} & BoxProps;
+
+export function ActionBar({ board, ...props }: InputProps) {
+	const { identifyBoard, sendFirmwareUpdate, startCalibration } =
+		useBoardActions();
 
 	const handleUploadFirmware = async (file: File) => {
 		try {
@@ -38,38 +43,18 @@ export function ActionBar({ board }: { board: Board }) {
 					<Text size="sm">
 						Firmware update command sent to board:
 						<Text span fw={700}>{` ${board.name} `}</Text>
-						<Text span>({board.id}).</Text>
 					</Text>
 				);
 
-				notifications.show({
-					title: "Success",
-					message: successMessage,
-					color: "green",
-					withBorder: true,
-					withCloseButton: false,
-				});
+				showSuccessNotification(successMessage);
 			} catch (error) {
-				notifications.show({
-					title: "Error",
-					message: "Failed to send firmware update command to board.",
-					color: "red",
-					withBorder: true,
-					withCloseButton: false,
-				});
-
-				console.error("Error sending firmware update:", error);
+				showErrorNotification(
+					"Failed to send firmware update command to board.",
+					error.message,
+				);
 			}
 		} catch (error) {
-			notifications.show({
-				title: "Error",
-				message: `Failed to upload firmware: ${error.message}`,
-				color: "red",
-				withBorder: true,
-				withCloseButton: false,
-			});
-
-			console.error("Error uploading firmware:", error);
+			showErrorNotification("Failed to upload firmware.", error.message);
 			return;
 		}
 	};
@@ -79,107 +64,88 @@ export function ActionBar({ board }: { board: Board }) {
 			await identifyBoard(board.id);
 
 			const successMessage = (
-				<Text size="sm">
-					Identify command sent to board:
-					<Text span fw={700}>{` ${board.name} `}</Text>
-					<Text span>({board.id}).</Text>
-					<Text fs="italic">LEDs will blink for 5 seconds.</Text>
-				</Text>
+				<>
+					<Text size="sm">
+						Identify command sent to board:
+						<Text span fw={700}>{` ${board.name} `}</Text>
+					</Text>
+					<Text fs="italic" size="sm">
+						LEDs will blink for 5 seconds.
+					</Text>
+				</>
 			);
 
-			notifications.show({
-				title: "Success",
-				message: successMessage,
-				color: "green",
-				withBorder: true,
-				withCloseButton: false,
-			});
+			showSuccessNotification(successMessage);
 		} catch (error) {
-			notifications.show({
-				title: "Error",
-				message: "Failed to send identify command to board.",
-				color: "red",
-				withBorder: true,
-				withCloseButton: false,
-			});
-
-			console.error("Error identifying board:", error);
+			showErrorNotification(
+				"Failed to send identify command to board.",
+				error.message,
+			);
 		}
 	};
 
-	const handleRebootBoard = async () => {
+	const handleStartCalibration = async () => {
+		console.log("Calibrating...");
+
 		try {
-			await rebootBoard(board.id);
+			await startCalibration(board.id);
 
 			const successMessage = (
 				<Text size="sm">
-					Reboot command sent to board:
+					Calibration initiated for board:
 					<Text span fw={700}>{` ${board.name} `}</Text>
-					<Text span>({board.id}).</Text>
 				</Text>
 			);
 
-			notifications.show({
-				title: "Success",
-				message: successMessage,
-				color: "green",
-				withBorder: true,
-				withCloseButton: false,
-			});
+			showSuccessNotification(successMessage);
 		} catch (error) {
-			notifications.show({
-				title: "Error",
-				message: "Failed to send reboot command to board.",
-				color: "red",
-				withBorder: true,
-				withCloseButton: false,
-			});
-
-			console.error("Error rebooting board:", error);
+			showErrorNotification("Failed to initiate calibration.", error.message);
 		}
 	};
 
 	return (
-		<Flex justify="space-between">
-			<Group gap="xs">
-				<ChangeNameModal id={board.id} name={board.name} />
-				<Tooltip label="Identify Board">
-					<ActionIcon
-						variant="default"
-						aria-label="Identify Board"
-						onClick={handleIdentifyBoard}
-					>
-						<IconSearch style={{ width: "70%", height: "70%" }} stroke={1.5} />
-					</ActionIcon>
-				</Tooltip>
-			</Group>
-			<Group gap="xs">
-				<FileButton onChange={handleUploadFirmware} accept=".bin">
-					{(props) => (
-						<Tooltip label="Upload Firmware">
-							<ActionIcon
-								variant="default"
-								aria-label="Upload Firmware"
-								{...props}
-							>
-								<IconFileUpload
-									style={{ width: "70%", height: "70%" }}
-									stroke={1.5}
-								/>
-							</ActionIcon>
-						</Tooltip>
-					)}
-				</FileButton>
-				<Tooltip label="Reboot Board">
-					<ActionIcon
-						variant="default"
-						aria-label="Reboot Board"
-						onClick={handleRebootBoard}
-					>
-						<IconRotate style={{ width: "70%", height: "70%" }} stroke={1.5} />
-					</ActionIcon>
-				</Tooltip>
-			</Group>
+		<Flex justify="space-between" {...props}>
+			<ChangeNameModal id={board.id} name={board.name} />
+
+			<Tooltip label="Flash LEDs">
+				<Button
+					variant="default"
+					size="xs"
+					radius="xl"
+					leftSection={<IconSearch size={14} />}
+					onClick={handleIdentifyBoard}
+				>
+					Identify
+				</Button>
+			</Tooltip>
+
+			<Tooltip label="Start on/off calibration">
+				<Button
+					variant="default"
+					size="xs"
+					radius="xl"
+					leftSection={<IconBolt size={14} />}
+					onClick={handleStartCalibration}
+				>
+					Calibrate
+				</Button>
+			</Tooltip>
+
+			<FileButton onChange={handleUploadFirmware} accept=".bin">
+				{(props) => (
+					<Tooltip label="Upload new firmware">
+						<Button
+							variant="default"
+							size="xs"
+							radius="xl"
+							leftSection={<IconFileUpload size={14} />}
+							{...props}
+						>
+							Firmware
+						</Button>
+					</Tooltip>
+				)}
+			</FileButton>
 		</Flex>
 	);
 }

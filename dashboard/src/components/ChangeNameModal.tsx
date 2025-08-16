@@ -1,11 +1,4 @@
-import {
-	ActionIcon,
-	Button,
-	Group,
-	Modal,
-	TextInput,
-	Tooltip,
-} from "@mantine/core";
+import { Button, Group, Modal, TextInput, Tooltip } from "@mantine/core";
 import { useForm } from "@mantine/form";
 import { useDisclosure } from "@mantine/hooks";
 import { notifications } from "@mantine/notifications";
@@ -70,10 +63,16 @@ export function ChangeNameModal({ id, name }: { id: string; name?: string }) {
 				</form>
 			</Modal>
 
-			<Tooltip label="Edit Name">
-				<ActionIcon variant="default" aria-label="Edit Name" onClick={open}>
-					<IconTag size={16} />
-				</ActionIcon>
+			<Tooltip label="Change board name" position="bottom">
+				<Button
+					variant="default"
+					size="xs"
+					radius="xl"
+					leftSection={<IconTag size={14} />}
+					onClick={open}
+				>
+					Name
+				</Button>
 			</Tooltip>
 		</>
 	);

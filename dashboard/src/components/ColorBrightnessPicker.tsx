@@ -21,7 +21,6 @@ export function ColorBrightnessPicker({ board }: { board: Board }) {
 				<Text size="sm">
 					<Text span>New color settings sent to board: </Text>
 					<Text span fw={700}>{` ${board.name} `}</Text>
-					<Text span>({board.id}).</Text>
 				</Text>
 			);
 
