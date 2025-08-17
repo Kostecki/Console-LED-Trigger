@@ -59,3 +59,11 @@ uint8_t lerpColorComponent(uint8_t from, uint8_t to, uint8_t step, uint8_t maxSt
 {
   return from + ((to - from) * step) / maxStep;
 }
+
+// Convert 24-bit RGB color to separate R, G, B components
+void rgbFrom24(uint32_t color, uint8_t &r, uint8_t &g, uint8_t &b)
+{
+  r = (uint8_t)((color >> 16) & 0xFF);
+  g = (uint8_t)((color >> 8) & 0xFF);
+  b = (uint8_t)(color & 0xFF);
+}

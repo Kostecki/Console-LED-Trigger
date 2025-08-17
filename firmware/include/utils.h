@@ -12,3 +12,4 @@ int readAdcAverage(uint8_t pin, int samples = 64);
 enum class ColorMode : uint8_t;
 const char *colorModeToString(ColorMode mode);
 uint8_t lerpColorComponent(uint8_t from, uint8_t to, uint8_t step, uint8_t maxStep);
+void rgbFrom24(uint32_t color, uint8_t &r, uint8_t &g, uint8_t &b);

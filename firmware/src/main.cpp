@@ -2,7 +2,6 @@
 #include <ArduinoOTA.h>
 #include <RotaryEncoder.h>
 #include <Adafruit_NeoPixel.h>
-#include <WiFiManager.h>
 #include <time.h>
 
 #include <state.h>
@@ -34,7 +33,6 @@ uint8_t currentBrightness = 128;
 
 String deviceName = "";
 unsigned long powerOffTime = 0;
-bool wifi_enabled = false;
 time_t bootTime = 0;
 
 static bool wasResetButtonPressed = false;
@@ -45,6 +43,7 @@ int currentThreshold = CURRENT_THRESHOLD;
 
 void setup()
 {
+  bootTime = 0;
 
   // Initialize Serial
   SerialBegin(115200);
@@ -56,7 +55,6 @@ void setup()
   pinMode(ENCODER_SW, INPUT_PULLUP);
   pinMode(CURRENT_SENSE_PIN, INPUT);
   pinMode(POWER_CALIBRATE_PIN, INPUT_PULLUP);
-  pinMode(WIFI_TOGGLE, INPUT_PULLUP);
   pinMode(WIFI_RESET, INPUT_PULLUP);
 
   // Initialize Preferences
@@ -77,43 +75,53 @@ void setup()
   Serial.print("Device name: ");
   Serial.println(deviceName);
 
-  wifi_enabled = digitalRead(WIFI_TOGGLE) == LOW;
-
-  // Setup WiFi and OTA
-  if (wifi_enabled)
-  {
-    Serial.println();
-    Serial.println("WiFi Enabled: Setting up WiFi, MQTT, and OTA");
-    initWiFiAndMQTTAndOTA(prefs);
-  }
-  else
-  {
-    Serial.println("WiFi Disabled: Skipping WiFi, MQTT and OTA setup");
-  }
-
-  bootTime = getSyncedUnixTime();
-  Serial.printf("Boot time set: %lu\n", bootTime);
+  String apName = "Console-LED-" + getMacSuffix();
+  wifiKickoff(apName, prefs);
 
   attachInterrupt(digitalPinToInterrupt(ENCODER_A), []
                   { encoder.tick(); }, CHANGE);
   attachInterrupt(digitalPinToInterrupt(ENCODER_B), []
                   { encoder.tick(); }, CHANGE);
 
-  // Read saved color index from Preferences
+  // Read saved color + brightness from Preferences (quiet on first boot)
   colorMode = static_cast<ColorMode>(prefs.getUChar("color_mode", 0));
   currentColorIndex = prefs.getUChar("color_index", 0);
-  String hex = prefs.getString("custom_color", "000000");
-  customColor = (uint32_t)strtoul(hex.c_str(), nullptr, 16);
-  Serial.println();
-  Serial.print("Color mode: ");
-  Serial.println(colorModeToString(colorMode));
-  if (colorMode == ColorMode::Custom)
+
+  uint32_t defaultCustom = 0x000000;
+  if (prefs.isKey("custom_color"))
   {
-    Serial.print("Custom color: #");
-    Serial.println(String(customColor, HEX));
+    String hex = prefs.getString("custom_color"); // may be "RRGGBB" or "#RRGGBB"
+    if (hex.startsWith("#"))
+      hex.remove(0, 1);
+    while (hex.length() < 6)
+      hex = "0" + hex;
+
+    customColor = (uint32_t)strtoul(hex.c_str(), nullptr, 16) & 0xFFFFFF;
   }
   else
   {
+    customColor = defaultCustom;
+  }
+
+  Serial.println();
+  Serial.print("Color mode: ");
+  Serial.println(colorModeToString(colorMode));
+
+  if (colorMode == ColorMode::Custom)
+  {
+    char buf[7];
+    snprintf(buf, sizeof(buf), "%06X", (unsigned)customColor);
+    Serial.print("Custom color: #");
+    Serial.println(buf);
+  }
+  else
+  {
+    // Clamp palette index defensively
+    if (currentColorIndex >= NUM_COLORS)
+    {
+      currentColorIndex = 0;
+      prefs.putUChar("color_index", currentColorIndex);
+    }
     Serial.print("Current color index: ");
     Serial.println(currentColorIndex);
   }
@@ -138,6 +146,26 @@ void setup()
 
 void loop()
 {
+  wifiProcess(prefs);
+  maybeInitNetServices(prefs);
+
+  if (wifiIsConnected())
+  {
+    handleMqttLoop();
+    ArduinoOTA.handle();
+
+    if (bootTime == 0)
+    {
+      time_t now = time(nullptr);
+      if (now != 0)
+      {
+        bootTime = now;
+        Serial.println();
+        Serial.printf("Boot time set: %lu\n", bootTime);
+      }
+    }
+  }
+
   // Handle WiFi reset button
   bool resetBtnPressed = digitalRead(WIFI_RESET) == LOW;
   if (resetBtnPressed && !wasResetButtonPressed)
@@ -145,22 +173,9 @@ void loop()
     delay(50);
     if (digitalRead(WIFI_RESET) == LOW)
     {
-      Serial.println();
-      Serial.print("Reset button pressed:");
-      if (wifi_enabled)
-      {
-        Serial.println(" Resetting WiFi and MQTT settings");
-        WiFiManager wifiManager;
-        wifiManager.resetSettings();
-        Serial.println("WiFi and MQTT settings reset. Restarting");
-      }
-      else
-      {
-        Serial.println(" Restarting without resetting WiFi and MQTT settings");
-      }
-      Serial.println();
-
-      ESP.restart();
+      Serial.println("Open config portal request");
+      String apName = "Console-LED-" + getMacSuffix();
+      reopenConfigPortal(apName);
     }
   }
   wasResetButtonPressed = resetBtnPressed;
@@ -190,12 +205,6 @@ void loop()
     }
   }
   wasCalButtonPressed = calPressed;
-
-  if (wifi_enabled)
-  {
-    handleMqttLoop();
-    ArduinoOTA.handle();
-  }
 
   int adc = analogRead(CURRENT_SENSE_PIN);
 
@@ -241,9 +250,10 @@ void loop()
     }
     lastLedEnabled = ledEnabled;
 
-    if (wifi_enabled)
+    if (wifiIsConnected())
     {
       publishState();
+      publishHAState();
     }
   }
 
@@ -312,7 +322,7 @@ void loop()
         Serial.println("Exiting brightness mode");
         inBrightnessMode = false;
 
-        if (wifi_enabled)
+        if (wifiIsConnected())
         {
           publishState();
         }
@@ -325,7 +335,7 @@ void loop()
         Serial.print("Saved color to Preferences: ");
         Serial.println(currentColorIndex);
 
-        if (wifi_enabled)
+        if (wifiIsConnected())
         {
           publishState();
         }
