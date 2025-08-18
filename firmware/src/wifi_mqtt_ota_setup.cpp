@@ -9,7 +9,7 @@
 #include <Arduino.h>
 
 #include <state.h>
-#include <utils.h> // rgbFrom24 declared here
+#include <utils.h>
 #include <serial_mux.h>
 #include <pins.h>
 #include <config.h>
@@ -252,8 +252,6 @@ void publishState()
   if (!mqttClient.connected())
     return;
 
-  Serial.println("Publishing state");
-
   JsonDocument doc;
   doc["enabled"] = ledEnabled;
   doc["brightness"] = currentBrightness;
@@ -261,6 +259,12 @@ void publishState()
   doc["name"] = deviceName;
   doc["colorMode"] = (colorMode == ColorMode::Palette) ? "palette" : "custom";
   doc["colorIndex"] = currentColorIndex;
+
+  JsonObject threshold = doc["threshold"].to<JsonObject>();
+  threshold["baseline"] = currentThreshold;
+  threshold["offset"] = currentThresholdOffset;
+  threshold["on"] = currentThreshold + currentThresholdOffset;
+  threshold["off"] = currentThreshold - currentThresholdOffset;
 
   char hexColor[8];
   snprintf(hexColor, sizeof(hexColor), "%06X", customColor);
@@ -343,10 +347,7 @@ void connectToMqtt()
   bool willRetain = true;
   const char *willPayload = "0";
 
-  if (mqttClient.connect(clientId.c_str(),
-                         mqtt_user.c_str(),
-                         mqtt_pass.c_str(),
-                         willTopic.c_str(), willQos, willRetain, willPayload))
+  if (mqttClient.connect(clientId.c_str(), mqtt_user.c_str(), mqtt_pass.c_str(), willTopic.c_str(), willQos, willRetain, willPayload))
   {
     Serial.println("MQTT connected");
 
@@ -462,6 +463,7 @@ void mqttCallback(char *topic, byte *payload, unsigned int length)
 {
   String topicStr(topic);
   String msg((const char *)payload, length);
+  Serial.println();
   Serial.printf("MQTT message on topic %s: %s\n", topic, msg.c_str());
 
   JsonDocument doc;
@@ -541,10 +543,12 @@ void mqttCallback(char *topic, byte *payload, unsigned int length)
         prefs.putUChar("color_mode", (uint8_t)colorMode);
         prefs.putUChar("color_index", currentColorIndex);
         updateLED(true);
+
+        Serial.print("[MQTT] Received color index: ");
+        Serial.println(colorIndex);
       }
       else if (colorIndex == -1 && doc["customColor"].is<const char *>())
       {
-        stateChanged = true;
         colorMode = ColorMode::Custom;
         String hex = doc["customColor"].as<const char *>();
         if (hex.startsWith("#"))
@@ -553,26 +557,50 @@ void mqttCallback(char *topic, byte *payload, unsigned int length)
         prefs.putUChar("color_mode", (uint8_t)colorMode);
         prefs.putString("custom_color", hex);
         updateLED(true);
+
+        Serial.print("[MQTT] Received custom color: #");
+        Serial.println(hex);
+
+        stateChanged = true;
       }
     }
 
     if (doc["brightness"].is<int>())
     {
-      stateChanged = true;
       int brightness = constrain((int)doc["brightness"], 0, 255);
       currentBrightness = brightness;
       prefs.putUChar("brightness", currentBrightness);
       strip.setBrightness(currentBrightness);
       updateLED(false);
+
+      Serial.print("[MQTT] Received brightness: ");
+      Serial.println(brightness);
+
+      stateChanged = true;
     }
 
     if (doc["name"].is<const char *>())
     {
-      stateChanged = true;
       deviceName = doc["name"].as<String>();
       prefs.putString("name", deviceName);
 
       publishHADiscovery();
+
+      Serial.print("[MQTT] Received device name: ");
+      Serial.println(deviceName);
+
+      stateChanged = true;
+    }
+
+    if (doc["thresholdOffset"].is<int>())
+    {
+      int offset = doc["thresholdOffset"];
+      Serial.print("[MQTT] Received threshold offset: ");
+      Serial.println(offset);
+
+      currentThresholdOffset = offset;
+      prefs.putInt("th_offset", currentThresholdOffset);
+      stateChanged = true;
     }
 
     if (stateChanged)
@@ -585,11 +613,18 @@ void mqttCallback(char *topic, byte *payload, unsigned int length)
   {
     if (doc["url"].is<const char *>())
     {
+      Serial.println();
+      Serial.print("[MQTT] Received firmware update URL: ");
+      Serial.println(doc["url"].as<const char *>());
+
       performOTAUpdate(doc["url"].as<String>());
     }
   }
   else if (topicStr.endsWith("/identify"))
   {
+    Serial.println();
+    Serial.println("[MQTT] Received identify command");
+
     uint32_t originalColor = (colorMode == ColorMode::Palette && currentColorIndex < NUM_COLORS)
                                  ? colors[currentColorIndex]
                                  : customColor;
@@ -602,18 +637,27 @@ void mqttCallback(char *topic, byte *payload, unsigned int length)
   }
   else if (topicStr.endsWith("/reboot"))
   {
+    Serial.println();
+    Serial.println("[MQTT] Received reboot request");
+
     delay(500);
     ESP.restart();
   }
   else if (topicStr.endsWith("/calibrate"))
   {
+    Serial.println();
+    Serial.println("[MQTT] Received calibration request");
+
     int baseline = readAdcAverage(CURRENT_SENSE_PIN, 64);
     currentThreshold = baseline;
-    prefs.putInt("current_threshold", currentThreshold);
+    prefs.putInt("th_base", currentThreshold);
     blinkConfirm(strip.Color(255, 255, 255), 2);
+
+    publishState();
   }
   else
   {
+    Serial.println();
     Serial.printf("Unknown topic: %s\n", topicStr.c_str());
   }
 }
@@ -643,10 +687,12 @@ static void loadMqttPrefs(Preferences &prefs)
 static void saveMqttPrefs(Preferences &prefs)
 {
   if (mqtt_server.length())
+  {
     prefs.putString("mqtt_server", mqtt_server);
-  prefs.putUInt("mqtt_port", mqtt_port);
-  prefs.putString("mqtt_user", mqtt_user);
-  prefs.putString("mqtt_pass", mqtt_pass);
+    prefs.putUInt("mqtt_port", mqtt_port);
+    prefs.putString("mqtt_user", mqtt_user);
+    prefs.putString("mqtt_pass", mqtt_pass);
+  }
 }
 
 void reopenConfigPortal(const String &apName)

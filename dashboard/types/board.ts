@@ -8,10 +8,18 @@ export type Leds = {
   status: OnlineStatus;
 };
 
+export type Threshold = {
+  baseline: number;
+  offset: number;
+  on: number;
+  off: number;
+};
+
 export type Board = {
   id: string;
   status: OnlineStatus;
   name?: string;
   bootTime: number;
   leds: Leds;
+  threshold: Threshold;
 };

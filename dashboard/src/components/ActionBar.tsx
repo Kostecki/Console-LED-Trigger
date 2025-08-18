@@ -6,10 +6,11 @@ import {
 	Text,
 	Tooltip,
 } from "@mantine/core";
-import { IconBolt, IconFileUpload, IconSearch } from "@tabler/icons-react";
+import { IconFileUpload, IconSearch } from "@tabler/icons-react";
 import { useBoardActions } from "hooks/useBoardActions";
 import { showErrorNotification, showSuccessNotification } from "src/utils";
 import type { Board } from "../../types/board";
+import { CalibrationModal } from "./CalibrationModal";
 import { ChangeNameModal } from "./ChangeNameModal";
 
 type InputProps = {
@@ -17,8 +18,7 @@ type InputProps = {
 } & BoxProps;
 
 export function ActionBar({ board, ...props }: InputProps) {
-	const { identifyBoard, sendFirmwareUpdate, startCalibration } =
-		useBoardActions();
+	const { identifyBoard, sendFirmwareUpdate } = useBoardActions();
 
 	const handleUploadFirmware = async (file: File) => {
 		try {
@@ -84,25 +84,6 @@ export function ActionBar({ board, ...props }: InputProps) {
 		}
 	};
 
-	const handleStartCalibration = async () => {
-		console.log("Calibrating...");
-
-		try {
-			await startCalibration(board.id);
-
-			const successMessage = (
-				<Text size="sm">
-					Calibration initiated for board:
-					<Text span fw={700}>{` ${board.name} `}</Text>
-				</Text>
-			);
-
-			showSuccessNotification(successMessage);
-		} catch (error) {
-			showErrorNotification("Failed to initiate calibration.", error.message);
-		}
-	};
-
 	return (
 		<Flex
 			justify="space-between"
@@ -111,7 +92,7 @@ export function ActionBar({ board, ...props }: InputProps) {
 				pointerEvents: board.status === 0 ? "none" : "auto",
 			}}
 		>
-			<ChangeNameModal id={board.id} name={board.name} />
+			<ChangeNameModal board={board} />
 
 			<Tooltip label="Flash LEDs">
 				<Button
@@ -125,17 +106,7 @@ export function ActionBar({ board, ...props }: InputProps) {
 				</Button>
 			</Tooltip>
 
-			<Tooltip label="Start on/off calibration">
-				<Button
-					variant="default"
-					size="xs"
-					radius="xl"
-					leftSection={<IconBolt size={14} />}
-					onClick={handleStartCalibration}
-				>
-					Calibrate
-				</Button>
-			</Tooltip>
+			<CalibrationModal board={board} />
 
 			<FileButton onChange={handleUploadFirmware} accept=".bin">
 				{(props) => (

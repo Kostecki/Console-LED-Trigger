@@ -38,8 +38,9 @@ time_t bootTime = 0;
 static bool wasResetButtonPressed = false;
 static bool wasCalButtonPressed = false;
 
-// Runtime current threshold (loaded from NVS. Fallback to config default)
+// Runtime current threshold + offset (loaded from NVS. Fallback to config default)
 int currentThreshold = CURRENT_THRESHOLD;
+int currentThresholdOffset = CURRENT_THRESHOLD_OFFSET;
 
 void setup()
 {
@@ -60,11 +61,6 @@ void setup()
   // Initialize Preferences
   prefs.begin("led-config", false);
 
-  // Load calibrated threshold if available
-  currentThreshold = prefs.getInt("current_threshold", CURRENT_THRESHOLD);
-  Serial.print("Current threshold: ");
-  Serial.println(currentThreshold);
-
   // Handle device name
   deviceName = prefs.getString("name", "");
   if (deviceName.isEmpty())
@@ -72,8 +68,18 @@ void setup()
     deviceName = "Console-" + getMacSuffix();
     prefs.putString("name", deviceName);
   }
+  Serial.println();
   Serial.print("Device name: ");
   Serial.println(deviceName);
+
+  // Load calibrated threshold if available
+  currentThreshold = prefs.getInt("th_base", CURRENT_THRESHOLD);
+  currentThresholdOffset = prefs.getInt("the_offset", CURRENT_THRESHOLD_OFFSET);
+  Serial.println();
+  Serial.print("Current threshold: ");
+  Serial.println(currentThreshold);
+  Serial.print("Current threshold offset: ");
+  Serial.println(currentThresholdOffset);
 
   String apName = "Console-LED-" + getMacSuffix();
   wifiKickoff(apName, prefs);
@@ -192,14 +198,20 @@ void loop()
 
       int baseline = readAdcAverage(CURRENT_SENSE_PIN, 64);
       currentThreshold = baseline;
-      prefs.putInt("current_threshold", currentThreshold);
+      prefs.putInt("th_base", currentThreshold);
       Serial.print("Calibrated baseline saved: ");
       Serial.println(currentThreshold);
       Serial.print("TH_ON / TH_OFF: ");
-      Serial.print(currentThreshold + CURRENT_THRESHOLD_OFFSET);
+      Serial.print(currentThreshold + currentThresholdOffset);
       Serial.print(" / ");
-      Serial.println(currentThreshold - CURRENT_THRESHOLD_OFFSET);
+      Serial.println(currentThreshold - currentThresholdOffset);
       Serial.println();
+
+      if (wifiIsConnected())
+      {
+        publishState();
+        publishHAState();
+      }
 
       blinkConfirm(strip.Color(255, 255, 255), 2);
     }
@@ -208,14 +220,15 @@ void loop()
 
   int adc = analogRead(CURRENT_SENSE_PIN);
 
+  // ADC Debug
   // Serial.printf("ADC Value: %d\n", adc, " > ", CURRENT_THRESHOLD_ON);
   // delay(500);
 
   static bool lastLedEnabled = false;
 
   // Use runtime threshold derived from calibrated baseline + fixed offset
-  const int TH_ON = currentThreshold + CURRENT_THRESHOLD_OFFSET;
-  const int TH_OFF = currentThreshold - CURRENT_THRESHOLD_OFFSET;
+  const int TH_ON = currentThreshold + currentThresholdOffset;
+  const int TH_OFF = currentThreshold - currentThresholdOffset;
 
   if (!ledEnabled && adc > TH_ON)
   {

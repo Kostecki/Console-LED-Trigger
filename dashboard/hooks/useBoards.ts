@@ -9,6 +9,12 @@ const defaultLedState = {
   brightness: 0,
   status: 0,
   bootTime: Date.now() / 1000,
+  threshold: {
+    baseline: 0,
+    offset: 0,
+    on: 0,
+    off: 0,
+  },
 };
 
 export function useBoards(): { boards: Board[]; ready: boolean } {
@@ -35,6 +41,12 @@ export function useBoards(): { boards: Board[]; ready: boolean } {
             status: defaultLedState.status,
           },
           bootTime: defaultLedState.bootTime,
+          threshold: {
+            baseline: defaultLedState.threshold.baseline,
+            offset: defaultLedState.threshold.offset,
+            on: defaultLedState.threshold.on,
+            off: defaultLedState.threshold.off,
+          },
         };
 
         return {
@@ -46,6 +58,10 @@ export function useBoards(): { boards: Board[]; ready: boolean } {
             leds: {
               ...prevBoard.leds,
               ...partial.leds,
+            },
+            threshold: {
+              ...prevBoard.threshold,
+              ...partial.threshold,
             },
           },
         };
@@ -78,6 +94,14 @@ export function useBoards(): { boards: Board[]; ready: boolean } {
             customColor: parsed.customColor || defaultLedState.customColor,
             brightness: parsed.brightness || defaultLedState.brightness,
             status: parsed.status || defaultLedState.status,
+          },
+          threshold: {
+            baseline:
+              parsed.threshold?.baseline || defaultLedState.threshold.baseline,
+            offset:
+              parsed.threshold?.offset || defaultLedState.threshold.offset,
+            on: parsed.threshold?.on || defaultLedState.threshold.on,
+            off: parsed.threshold?.off || defaultLedState.threshold.off,
           },
         });
       } catch (error) {

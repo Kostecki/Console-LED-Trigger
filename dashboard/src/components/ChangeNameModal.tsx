@@ -4,8 +4,9 @@ import { useDisclosure } from "@mantine/hooks";
 import { notifications } from "@mantine/notifications";
 import { IconTag } from "@tabler/icons-react";
 import { useBoardActions } from "hooks/useBoardActions";
+import type { Board } from "types/board";
 
-export function ChangeNameModal({ id, name }: { id: string; name?: string }) {
+export function ChangeNameModal({ board: { name, id } }: { board: Board }) {
 	const { setBoardName } = useBoardActions();
 
 	const [opened, { open, close }] = useDisclosure(false);

@@ -5,12 +5,12 @@ import { percentageToBrightness, swatches } from "src/utils";
 export function useBoardActions() {
   const client = useContext(MqttContext);
 
-  const setBoardName = async (id: string, name: string): Promise<void> => {
+  const setBoardName = async (boardId: string, name: string): Promise<void> => {
     if (!client || !client.connected) {
       throw new Error("MQTT client not connected");
     }
 
-    const topic = `console/${id}/set`;
+    const topic = `console/${boardId}/set`;
     const payload = JSON.stringify({ name });
 
     return new Promise((resolve, reject) => {
@@ -26,7 +26,7 @@ export function useBoardActions() {
   };
 
   const setColorSettings = async (
-    id: string,
+    boardId: string,
     color: string,
     brightness: number
   ): Promise<void> => {
@@ -41,7 +41,7 @@ export function useBoardActions() {
       brightness: percentageToBrightness(brightness),
     };
 
-    const topic = `console/${id}/set`;
+    const topic = `console/${boardId}/set`;
     const payload = JSON.stringify(jsonBody);
 
     return new Promise((resolve, reject) => {
@@ -56,12 +56,12 @@ export function useBoardActions() {
     });
   };
 
-  const identifyBoard = async (id: string): Promise<void> => {
+  const identifyBoard = async (boardId: string): Promise<void> => {
     if (!client || !client.connected) {
       throw new Error("MQTT client not connected");
     }
 
-    const topic = `console/${id}/identify`;
+    const topic = `console/${boardId}/identify`;
     const payload = "1";
 
     return new Promise((resolve, reject) => {
@@ -77,14 +77,14 @@ export function useBoardActions() {
   };
 
   const sendFirmwareUpdate = async (
-    id: string,
+    boardId: string,
     firmwareUrl: string
   ): Promise<void> => {
     if (!client || !client.connected) {
       throw new Error("MQTT client not connected");
     }
 
-    const topic = `console/${id}/fw-update`;
+    const topic = `console/${boardId}/fw-update`;
     const payload = JSON.stringify({ firmwareUrl });
 
     return new Promise((resolve, reject) => {
@@ -99,12 +99,12 @@ export function useBoardActions() {
     });
   };
 
-  const rebootBoard = async (id: string): Promise<void> => {
+  const rebootBoard = async (boardId: string): Promise<void> => {
     if (!client || !client.connected) {
       throw new Error("MQTT client not connected");
     }
 
-    const topic = `console/${id}/reboot`;
+    const topic = `console/${boardId}/reboot`;
     const payload = "1";
 
     return new Promise((resolve, reject) => {
@@ -119,13 +119,39 @@ export function useBoardActions() {
     });
   };
 
-  const startCalibration = async (id: string): Promise<void> => {
+  const startCalibration = async (boardId: string): Promise<void> => {
     if (!client || !client.connected) {
       throw new Error("MQTT client not connected");
     }
 
-    const topic = `console/${id}/calibrate`;
+    const topic = `console/${boardId}/calibrate`;
     const payload = "1";
+
+    return new Promise((resolve, reject) => {
+      client.publish(topic, payload, { qos: 1 }, (err) => {
+        if (err) {
+          console.error(`Failed to publish to ${topic}:`, err);
+          reject(err);
+        } else {
+          resolve();
+        }
+      });
+    });
+  };
+
+  const setCurrentThresholdOffset = async (
+    boardId: string,
+    offsetValue: number
+  ): Promise<void> => {
+    if (!client || !client.connected) {
+      throw new Error("MQTT client not connected");
+    }
+
+    const topic = `console/${boardId}/set`;
+    const jsonBody = {
+      thresholdOffset: offsetValue,
+    };
+    const payload = JSON.stringify(jsonBody);
 
     return new Promise((resolve, reject) => {
       client.publish(topic, payload, { qos: 1 }, (err) => {
@@ -146,5 +172,6 @@ export function useBoardActions() {
     sendFirmwareUpdate,
     rebootBoard,
     startCalibration,
+    setCurrentThresholdOffset,
   };
 }

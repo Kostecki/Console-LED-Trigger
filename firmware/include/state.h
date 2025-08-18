@@ -20,6 +20,7 @@ extern bool ledEnabled;
 extern time_t bootTime;
 extern String deviceName;
 extern int currentThreshold;
+extern int currentThresholdOffset;
 
 // From colors.h
 extern const uint32_t colors[];
