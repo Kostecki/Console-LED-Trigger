@@ -45,6 +45,15 @@ static inline String haCfgTopic() { return "homeassistant/light/" + haNodeId() +
 static inline String haCmdTopic() { return "console/" + haNodeId() + "/ha/set"; }
 static inline String haStateTopic() { return "console/" + haNodeId() + "/ha/state"; }
 static inline String haAvailTopic() { return "console/" + haNodeId() + "/status"; }
+static inline String haNumberOffsetCfgTopic() { return "homeassistant/number/" + haNodeId() + "/offset/config"; }
+static inline String haSensorBaselineCfgTopic() { return "homeassistant/sensor/" + haNodeId() + "/threshold/config"; }
+static inline String haSensorOnCfgTopic() { return "homeassistant/sensor/" + haNodeId() + "/th_on/config"; }
+static inline String haSensorOffCfgTopic() { return "homeassistant/sensor/" + haNodeId() + "/th_off/config"; }
+static inline String haOffsetSetTopic() { return "console/" + haNodeId() + "/offset/set"; }
+static inline String haOffsetStateTopic() { return "console/" + haNodeId() + "/offset/state"; }
+static inline String haBaseStateTopic() { return "console/" + haNodeId() + "/threshold/state"; }
+static inline String haThOnStateTopic() { return "console/" + haNodeId() + "/th_on/state"; }
+static inline String haThOffStateTopic() { return "console/" + haNodeId() + "/th_off/state"; }
 
 static void connectToMqtt();
 static void saveMqttPrefs(Preferences &prefs);
@@ -310,6 +319,67 @@ static void publishHADiscovery()
     String payload;
     serializeJson(config, payload);
     mqttClient.publish(haCfgTopic().c_str(), (const uint8_t *)payload.c_str(), payload.length(), true);
+
+    {
+      JsonDocument config;
+      config["name"] = "Offset";
+      config["uniq_id"] = haNodeId() + "_offset";
+      config["cmd_t"] = haOffsetSetTopic();
+      config["stat_t"] = haOffsetStateTopic();
+      config["mode"] = "box";
+      config["min"] = 0;
+      config["max"] = 5000;
+      config["step"] = 1;
+
+      JsonObject dev = config["device"].to<JsonObject>();
+      dev["ids"].add("console_" + haNodeId());
+
+      String payload;
+      serializeJson(config, payload);
+      mqttClient.publish(haNumberOffsetCfgTopic().c_str(), (const uint8_t *)payload.c_str(), payload.length(), true);
+    }
+
+    {
+      JsonDocument config;
+      config["name"] = "Baseline";
+      config["uniq_id"] = haNodeId() + "_threshold";
+      config["stat_t"] = haBaseStateTopic();
+
+      JsonObject dev = config["device"].to<JsonObject>();
+      dev["ids"].add("console_" + haNodeId());
+
+      String payload;
+      serializeJson(config, payload);
+      mqttClient.publish(haSensorBaselineCfgTopic().c_str(), (const uint8_t *)payload.c_str(), payload.length(), true);
+    }
+
+    {
+      JsonDocument config;
+      config["name"] = "Threshold (On)";
+      config["uniq_id"] = haNodeId() + "_th_on";
+      config["stat_t"] = haThOnStateTopic();
+
+      JsonObject dev = config["device"].to<JsonObject>();
+      dev["ids"].add("console_" + haNodeId());
+
+      String payload;
+      serializeJson(config, payload);
+      mqttClient.publish(haSensorOnCfgTopic().c_str(), (const uint8_t *)payload.c_str(), payload.length(), true);
+    }
+
+    {
+      JsonDocument config;
+      config["name"] = "Threshold (Off)";
+      config["uniq_id"] = haNodeId() + "_th_off";
+      config["stat_t"] = haThOffStateTopic();
+
+      JsonObject dev = config["device"].to<JsonObject>();
+      dev["ids"].add("console_" + haNodeId());
+
+      String payload;
+      serializeJson(config, payload);
+      mqttClient.publish(haSensorOffCfgTopic().c_str(), (const uint8_t *)payload.c_str(), payload.length(), true);
+    }
   }
 }
 
@@ -318,22 +388,28 @@ void publishHAState()
   if (!mqttClient.connected())
     return;
 
-  JsonDocument st;
-  st["state"] = ledEnabled ? "ON" : "OFF";
-  st["brightness"] = (int)currentBrightness;
-  st["color_mode"] = "rgb";
+  JsonDocument state;
+  state["state"] = ledEnabled ? "ON" : "OFF";
+  state["brightness"] = (int)currentBrightness;
+  state["color_mode"] = "rgb";
 
   uint32_t c = (colorMode == ColorMode::Palette && currentColorIndex < NUM_COLORS) ? colors[currentColorIndex] : customColor;
   uint8_t r = 0, g = 0, b = 0;
   rgbFrom24(c, r, g, b);
-  auto col = st["color"].to<JsonObject>();
-  col["r"] = (int)r;
-  col["g"] = (int)g;
-  col["b"] = (int)b;
+  auto color = state["color"].to<JsonObject>();
+  color["r"] = (int)r;
+  color["g"] = (int)g;
+  color["b"] = (int)b;
 
   String payload;
-  serializeJson(st, payload);
+  serializeJson(state, payload);
   mqttClient.publish(haStateTopic().c_str(), (const uint8_t *)payload.c_str(), payload.length(), true);
+
+  // Calibration Threshold/Offset
+  mqttClient.publish(haOffsetStateTopic().c_str(), String(currentThresholdOffset).c_str(), true);
+  mqttClient.publish(haBaseStateTopic().c_str(), String(currentThreshold).c_str(), true);
+  mqttClient.publish(haThOnStateTopic().c_str(), String(currentThreshold + currentThresholdOffset).c_str(), true);
+  mqttClient.publish(haThOffStateTopic().c_str(), String(currentThreshold - currentThresholdOffset).c_str(), true);
 }
 
 void connectToMqtt()
@@ -359,12 +435,13 @@ void connectToMqtt()
     mqttClient.subscribe((prefix + "/calibrate").c_str());
 
     mqttClient.subscribe(haCmdTopic().c_str());
+    mqttClient.subscribe(haOffsetSetTopic().c_str());
 
     mqttClient.publish(haAvailTopic().c_str(), "1", willRetain);
 
+    publishState();
     publishHADiscovery();
     publishHAState();
-    publishState();
 
     lastReconnectAttempt = millis();
   }
@@ -474,6 +551,22 @@ void mqttCallback(char *topic, byte *payload, unsigned int length)
     return;
   }
 
+  if (topicStr == haOffsetSetTopic())
+  {
+    int newOffset = msg.toInt();
+    Serial.printf("[MQTT] HA requested offset: %d\n", newOffset);
+
+    if (newOffset != currentThresholdOffset)
+    {
+      currentThresholdOffset = newOffset;
+      prefs.putInt("th_offset", currentThresholdOffset);
+      publishState();
+      publishHAState();
+    }
+
+    return;
+  }
+
   if (topicStr == haCmdTopic())
   {
     bool stateChanged = false;
@@ -521,8 +614,8 @@ void mqttCallback(char *topic, byte *payload, unsigned int length)
 
     if (stateChanged)
     {
-      publishHAState();
       publishState();
+      publishHAState();
     }
     return;
   }
@@ -625,9 +718,7 @@ void mqttCallback(char *topic, byte *payload, unsigned int length)
     Serial.println();
     Serial.println("[MQTT] Received identify command");
 
-    uint32_t originalColor = (colorMode == ColorMode::Palette && currentColorIndex < NUM_COLORS)
-                                 ? colors[currentColorIndex]
-                                 : customColor;
+    uint32_t originalColor = (colorMode == ColorMode::Palette && currentColorIndex < NUM_COLORS) ? colors[currentColorIndex] : customColor;
     for (int i = 0; i < 3; ++i)
     {
       fadeToColor(strip.Color(255, 255, 255), 10, 15);
@@ -654,6 +745,7 @@ void mqttCallback(char *topic, byte *payload, unsigned int length)
     blinkConfirm(strip.Color(255, 255, 255), 2);
 
     publishState();
+    publishHAState();
   }
   else
   {

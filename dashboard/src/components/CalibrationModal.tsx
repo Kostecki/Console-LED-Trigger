@@ -28,7 +28,7 @@ export function CalibrationModal({
 	const timeoutRef = useRef<number | null>(null);
 
 	const form = useForm({
-		mode: "uncontrolled",
+		mode: "controlled",
 		initialValues: {
 			offset: threshold.offset,
 		},
@@ -101,6 +101,12 @@ export function CalibrationModal({
 			);
 		}
 	}, [threshold, calibrating, name]);
+
+	useEffect(() => {
+		if (threshold?.offset !== undefined) {
+			form.setFieldValue("offset", threshold.offset);
+		}
+	}, [threshold.offset, form.setFieldValue]);
 
 	useEffect(() => {
 		return () => {
