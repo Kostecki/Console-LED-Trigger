@@ -14,6 +14,7 @@
 #include <pins.h>
 #include <config.h>
 #include <wifi_mqtt_ota_setup.h>
+#include <ha_topics.h>
 
 WiFiClient espClient;
 PubSubClient mqttClient(espClient);
@@ -38,22 +39,6 @@ static WiFiManagerParameter *g_pMqttServer = nullptr;
 static WiFiManagerParameter *g_pMqttPort = nullptr;
 static WiFiManagerParameter *g_pMqttUser = nullptr;
 static WiFiManagerParameter *g_pMqttPass = nullptr;
-
-static inline String haNodeId() { return "board-" + getMacSuffix(); }
-static inline String haObjectId() { return haNodeId() + "-light"; }
-static inline String haCfgTopic() { return "homeassistant/light/" + haNodeId() + "/config"; }
-static inline String haCmdTopic() { return "console/" + haNodeId() + "/ha/set"; }
-static inline String haStateTopic() { return "console/" + haNodeId() + "/ha/state"; }
-static inline String haAvailTopic() { return "console/" + haNodeId() + "/status"; }
-static inline String haNumberOffsetCfgTopic() { return "homeassistant/number/" + haNodeId() + "/offset/config"; }
-static inline String haSensorBaselineCfgTopic() { return "homeassistant/sensor/" + haNodeId() + "/threshold/config"; }
-static inline String haSensorOnCfgTopic() { return "homeassistant/sensor/" + haNodeId() + "/th_on/config"; }
-static inline String haSensorOffCfgTopic() { return "homeassistant/sensor/" + haNodeId() + "/th_off/config"; }
-static inline String haOffsetSetTopic() { return "console/" + haNodeId() + "/offset/set"; }
-static inline String haOffsetStateTopic() { return "console/" + haNodeId() + "/offset/state"; }
-static inline String haBaseStateTopic() { return "console/" + haNodeId() + "/threshold/state"; }
-static inline String haThOnStateTopic() { return "console/" + haNodeId() + "/th_on/state"; }
-static inline String haThOffStateTopic() { return "console/" + haNodeId() + "/th_off/state"; }
 
 static void connectToMqtt();
 static void saveMqttPrefs(Preferences &prefs);
@@ -282,7 +267,7 @@ void publishState()
   String payload;
   serializeJson(doc, payload);
 
-  String topic = "console/board-" + getMacSuffix() + "/state";
+  String topic = "console/board-" + toLower(getMacSuffix()) + "/state";
   mqttClient.publish(topic.c_str(), (const uint8_t *)payload.c_str(), payload.length(), true);
 }
 
@@ -305,6 +290,7 @@ static void publishHADiscovery()
     config["schema"] = "json";
     config["color_mode"] = true;
     config["optimistic"] = false;
+    config["icon"] = "mdi:led-strip";
 
     JsonArray modes = config["supported_color_modes"].to<JsonArray>();
     modes.add("rgb");
@@ -318,67 +304,127 @@ static void publishHADiscovery()
 
     String payload;
     serializeJson(config, payload);
-    mqttClient.publish(haCfgTopic().c_str(), (const uint8_t *)payload.c_str(), payload.length(), true);
+    mqttClient.publish(haConfigTopic().c_str(), (const uint8_t *)payload.c_str(), payload.length(), true);
 
+    // Identify Button
     {
       JsonDocument config;
-      config["name"] = "Offset";
+      config["name"] = "Identify";
+      config["uniq_id"] = haNodeId() + "_identify";
+      config["cmd_t"] = haIdentifyCmdTopic();
+      config["payload_press"] = "1";
+      config["icon"] = "mdi:magnify";
+
+      JsonObject device = config["device"].to<JsonObject>();
+      device["ids"].add("console_" + haNodeId());
+
+      String payload;
+      serializeJson(config, payload);
+      mqttClient.publish(haIdentifyConfigTopic().c_str(), (const uint8_t *)payload.c_str(), payload.length(), true);
+    }
+
+    // Reboot Button
+    {
+      JsonDocument config;
+      config["name"] = "Reboot";
+      config["uniq_id"] = haNodeId() + "_reboot";
+      config["cmd_t"] = haRebootCmdTopic();
+      config["payload_press"] = "1";
+      config["icon"] = "mdi:reload";
+
+      JsonObject device = config["device"].to<JsonObject>();
+      device["ids"].add("console_" + haNodeId());
+
+      String payload;
+      serializeJson(config, payload);
+      mqttClient.publish(haRebootConfigTopic().c_str(), (const uint8_t *)payload.c_str(), payload.length(), true);
+    }
+
+    // Calibrate
+    {
+      JsonDocument config;
+      config["name"] = "Start Calibration";
+      config["uniq_id"] = haNodeId() + "_calibrate";
+      config["cmd_t"] = haCalibrateCmdTopic();
+      config["payload_press"] = "1";
+      config["icon"] = "mdi:lightning-bolt";
+
+      JsonObject device = config["device"].to<JsonObject>();
+      device["ids"].add("console_" + haNodeId());
+
+      String payload;
+      serializeJson(config, payload);
+      mqttClient.publish(haCalibrateConfigTopic().c_str(), (const uint8_t *)payload.c_str(), payload.length(), true);
+    }
+
+    // Offset
+    {
+      JsonDocument config;
+      config["name"] = "Threshold Offset";
       config["uniq_id"] = haNodeId() + "_offset";
-      config["cmd_t"] = haOffsetSetTopic();
+      config["cmd_t"] = haOffsetCmdTopic();
       config["stat_t"] = haOffsetStateTopic();
       config["mode"] = "box";
       config["min"] = 0;
       config["max"] = 5000;
       config["step"] = 1;
+      config["entity_category"] = "config";
+      config["icon"] = "mdi:arrow-expand-horizontal";
 
       JsonObject dev = config["device"].to<JsonObject>();
       dev["ids"].add("console_" + haNodeId());
 
       String payload;
       serializeJson(config, payload);
-      mqttClient.publish(haNumberOffsetCfgTopic().c_str(), (const uint8_t *)payload.c_str(), payload.length(), true);
+      mqttClient.publish(haNumberOffsetConfigTopic().c_str(), (const uint8_t *)payload.c_str(), payload.length(), true);
     }
 
+    // Baseline
     {
       JsonDocument config;
       config["name"] = "Baseline";
       config["uniq_id"] = haNodeId() + "_threshold";
       config["stat_t"] = haBaseStateTopic();
+      config["entity_category"] = "diagnostic";
 
       JsonObject dev = config["device"].to<JsonObject>();
       dev["ids"].add("console_" + haNodeId());
 
       String payload;
       serializeJson(config, payload);
-      mqttClient.publish(haSensorBaselineCfgTopic().c_str(), (const uint8_t *)payload.c_str(), payload.length(), true);
+      mqttClient.publish(haSensorBaselineConfigTopic().c_str(), (const uint8_t *)payload.c_str(), payload.length(), true);
     }
 
+    // Threshold (On)
     {
       JsonDocument config;
       config["name"] = "Threshold (On)";
       config["uniq_id"] = haNodeId() + "_th_on";
       config["stat_t"] = haThOnStateTopic();
+      config["entity_category"] = "diagnostic";
 
       JsonObject dev = config["device"].to<JsonObject>();
       dev["ids"].add("console_" + haNodeId());
 
       String payload;
       serializeJson(config, payload);
-      mqttClient.publish(haSensorOnCfgTopic().c_str(), (const uint8_t *)payload.c_str(), payload.length(), true);
+      mqttClient.publish(haSensorOnConfigTopic().c_str(), (const uint8_t *)payload.c_str(), payload.length(), true);
     }
 
+    // Threshold (Off)
     {
       JsonDocument config;
       config["name"] = "Threshold (Off)";
       config["uniq_id"] = haNodeId() + "_th_off";
       config["stat_t"] = haThOffStateTopic();
+      config["entity_category"] = "diagnostic";
 
       JsonObject dev = config["device"].to<JsonObject>();
       dev["ids"].add("console_" + haNodeId());
 
       String payload;
       serializeJson(config, payload);
-      mqttClient.publish(haSensorOffCfgTopic().c_str(), (const uint8_t *)payload.c_str(), payload.length(), true);
+      mqttClient.publish(haSensorOffConfigTopic().c_str(), (const uint8_t *)payload.c_str(), payload.length(), true);
     }
   }
 }
@@ -435,7 +481,7 @@ void connectToMqtt()
     mqttClient.subscribe((prefix + "/calibrate").c_str());
 
     mqttClient.subscribe(haCmdTopic().c_str());
-    mqttClient.subscribe(haOffsetSetTopic().c_str());
+    mqttClient.subscribe(haOffsetCmdTopic().c_str());
 
     mqttClient.publish(haAvailTopic().c_str(), "1", willRetain);
 
@@ -540,8 +586,6 @@ void mqttCallback(char *topic, byte *payload, unsigned int length)
 {
   String topicStr(topic);
   String msg((const char *)payload, length);
-  Serial.println();
-  Serial.printf("MQTT message on topic %s: %s\n", topic, msg.c_str());
 
   JsonDocument doc;
   auto err = deserializeJson(doc, msg);
@@ -551,7 +595,7 @@ void mqttCallback(char *topic, byte *payload, unsigned int length)
     return;
   }
 
-  if (topicStr == haOffsetSetTopic())
+  if (topicStr == haOffsetCmdTopic())
   {
     int newOffset = msg.toInt();
     Serial.printf("[MQTT] HA requested offset: %d\n", newOffset);

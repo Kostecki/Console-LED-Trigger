@@ -67,3 +67,9 @@ void rgbFrom24(uint32_t color, uint8_t &r, uint8_t &g, uint8_t &b)
   g = (uint8_t)((color >> 8) & 0xFF);
   b = (uint8_t)(color & 0xFF);
 }
+
+String toLower(String s)
+{
+  s.toLowerCase();
+  return s;
+}
