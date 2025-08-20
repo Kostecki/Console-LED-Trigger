@@ -108,8 +108,8 @@ Once connected to WiFi:
 | 2     | Blue    |         |
 | 3     | Yellow  |         |
 | 4     | Magenta |         |
-| 5     | Orange  |         |
-| 6     | Cyan    |         |
+| 5     | Cyan    |         |
+| 6     | Teal    |         |
 | 7     | White   |         |
 
 ## BOM
