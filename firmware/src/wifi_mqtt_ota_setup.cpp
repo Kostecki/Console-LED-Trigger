@@ -280,7 +280,7 @@ static void publishHADiscovery()
 
   {
     JsonDocument config;
-    config["name"] = deviceName.length() ? deviceName : ("Console " + getMacSuffix());
+    config["name"] = "Console LED Strip";
     config["uniq_id"] = haNodeId();
     config["cmd_t"] = haCmdTopic();
     config["stat_t"] = haStateTopic();
@@ -297,7 +297,7 @@ static void publishHADiscovery()
 
     JsonObject device = config["device"].to<JsonObject>();
     device["ids"].add("console_" + haNodeId());
-    device["name"] = config["name"];
+    device["name"] = "Console-" + getMacSuffix();
     device["mf"] = HA_DEVICE_MANUFACTURER;
     device["mdl"] = HA_DEVICE_MODEL;
     device["sw"] = HA_DEVICE_FW_VERSION;
