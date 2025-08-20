@@ -360,7 +360,7 @@ static void publishHADiscovery()
     // Offset
     {
       JsonDocument config;
-      config["name"] = "Threshold Offset";
+      config["name"] = "Threshold offset";
       config["uniq_id"] = haNodeId() + "_offset";
       config["cmd_t"] = haOffsetCmdTopic();
       config["stat_t"] = haOffsetStateTopic();
@@ -398,7 +398,7 @@ static void publishHADiscovery()
     // Threshold (On)
     {
       JsonDocument config;
-      config["name"] = "Threshold (On)";
+      config["name"] = "Threshold (on)";
       config["uniq_id"] = haNodeId() + "_th_on";
       config["stat_t"] = haThOnStateTopic();
       config["entity_category"] = "diagnostic";
@@ -414,7 +414,7 @@ static void publishHADiscovery()
     // Threshold (Off)
     {
       JsonDocument config;
-      config["name"] = "Threshold (Off)";
+      config["name"] = "Threshold (off)";
       config["uniq_id"] = haNodeId() + "_th_off";
       config["stat_t"] = haThOffStateTopic();
       config["entity_category"] = "diagnostic";
