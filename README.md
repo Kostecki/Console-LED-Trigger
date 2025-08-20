@@ -42,7 +42,7 @@ Wi-Fi and OTA functionality is **only initialized if a jumper is placed** across
 ## Connectivity
 
 ### WiFi Setup
-- On first boot or if no WiFi is saved, the ESP32 starts an **Access Point** named `Console-LED-AP`.
+- On first boot or if no WiFi is saved, the ESP32 starts an **Access Point** named `Console-LED-[Board ID]`.
 - Connect to that network (http://192.168.4.1) from your phone/laptop.
 - A captive portal will appear. Enter your WiFi credentials.
 - The ESP32 will save the SSID and password for future use.
